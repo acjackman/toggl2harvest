@@ -1,0 +1,21 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+requests = "*"
+click = "*"
+pyaml = "*"
+"e1839a8" = {path = ".", editable = true}
+click-log = "*"
+
+[dev-packages]
+ipython = "*"
+pytest = "*"
+pytest-sugar = "*"
+pytest-mock = "*"
+pytest-click = "*"
+
+[requires]
+python_version = "3.6"
