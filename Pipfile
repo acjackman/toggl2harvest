@@ -9,6 +9,8 @@ click = "*"
 pyaml = "*"
 "e1839a8" = {path = ".", editable = true}
 click-log = "*"
+sniffer = "*"
+macfsevents = "*"
 
 [dev-packages]
 ipython = "*"
