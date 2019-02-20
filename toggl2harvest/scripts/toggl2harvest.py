@@ -9,11 +9,13 @@ import click
 # from toggl2harvest.harvest import HarvestCredentials, HarvestSession
 from toggl2harvest import harvest
 from toggl2harvest.utils import (
-    cred_file_path,
-    fmt_timedelta,
-    delta_hours,
     calc_total_time,
+    cred_file_path,
     data_file_path,
+    delta_hours,
+    fmt_timedelta,
+    generate_selected_days,
+    parse_start_end,
 )
 
 log = logging.getLogger(__name__)
@@ -219,12 +221,8 @@ def download_toggl_data(config, start, end):
 @click.option('--end', default=str(datetime.today()))
 @pass_config
 def validate_data(config, start, end):
-    start = dateutil_parser.parse(start)
-    end = dateutil_parser.parse(end)
-    selected_days = [start]
-    while selected_days[-1] < end:
-        selected_days.append(selected_days[-1] + timedelta(hours=24))
-    selected_days = [d.strftime('%Y-%m-%d') for d in selected_days]
+    start_date, end_date = parse_start_end(start, end)
+    selected_days = generate_selected_days(start_date, end_date)
 
     # Get project mapping
     project_file = os.path.join(config.config_dir, 'project_mapping.yml')
@@ -320,13 +318,8 @@ def validate_data(config, start, end):
 @click.option('--end', default=str(datetime.today()))
 @pass_config
 def upload_to_harvest(config, start, end):
-    start = dateutil_parser.parse(start)
-    end = dateutil_parser.parse(end)
-    selected_days = [start]
-    while selected_days[-1] < end:
-        selected_days.append(selected_days[-1] + timedelta(hours=24))
-    selected_days = [d.strftime('%Y-%m-%d') for d in selected_days]
-
+    start_date, end_date = parse_start_end(start, end)
+    selected_days = generate_selected_days(start_date, end_date)
 
     harvest_cred = get_harvest_cred(config)
     config.harvest_api = harvest.HarvestSession(harvest_cred)

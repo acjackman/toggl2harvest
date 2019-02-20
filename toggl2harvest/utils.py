@@ -4,6 +4,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 import click
+from dateutil import parser as dateutil_parser
+
 
 log = logging.getLogger(__name__)
 
@@ -47,3 +49,17 @@ def calc_total_time(time_entries):
 
 def data_file_path(config, date_str):
     return Path(os.path.join(config.config_dir, 'data', f'{date_str}.yml'))
+
+
+def parse_start_end(start, end):
+    start_date = dateutil_parser.parse(start)
+    end_date = dateutil_parser.parse(end)
+    return (start_date, end_date)
+
+
+def generate_selected_days(start, end):
+    selected_days = [start]
+    while selected_days[-1] < end:
+        selected_days.append(selected_days[-1] + timedelta(hours=24))
+    selected_days = [d.strftime('%Y-%m-%d') for d in selected_days]
+    return selected_days
