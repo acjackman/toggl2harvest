@@ -1,7 +1,8 @@
+# Third Party Packages
 import pytest
 
-from toggl2harvest.scripts.toggl2harvest import cli
 from toggl2harvest.harvest import HarvestCredentials
+from toggl2harvest.scripts.toggl2harvest import cli
 
 
 @pytest.fixture()
@@ -50,6 +51,7 @@ def test_harvest_cred_fails_gracefully_with_malformed_credentials_file(
     assert result.exit_code == 1, result.output
 
     assert harvest_session_mock.call_count == 0
+
 
 def test_harvest_cred_updates_project_cache(
         mocker, isolated_cli_runner, harvest_cred_mock, harvest_session_mock):

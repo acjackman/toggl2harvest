@@ -1,4 +1,6 @@
-from setuptools import setup, find_packages
+# Third Party Packages
+from setuptools import find_packages, setup
+
 
 setup(
     name='Toggl2Harvest',

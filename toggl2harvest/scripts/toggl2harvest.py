@@ -1,9 +1,11 @@
+# Standard Library
 import logging
 import os
+from datetime import datetime
 from os.path import expanduser
-from datetime import datetime, timedelta
 from pathlib import Path
 
+# Third Party Packages
 import click
 from dateutil import parser as dateutil_parser
 from ruamel.yaml import YAML
@@ -19,6 +21,7 @@ from toggl2harvest.utils import (
     generate_selected_days,
     parse_start_end,
 )
+
 
 log = logging.getLogger(__name__)
 
@@ -118,7 +121,7 @@ def harvest_cache(config):
     harvest_api = harvest.HarvestSession(harvest_cred)
     try:
         harvest_api.update_project_cache(config.config_dir)
-    except Exception as e:
+    except Exception:
         log.debug('exception caught.', exc_info=True)
         log_msg = 'Could not make connect to the Harvest API.'
         log.error(log_msg)

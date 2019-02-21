@@ -1,13 +1,16 @@
+# Standard Library
 import logging
 import os
 from inspect import cleandoc as trim_multiline
 
+# Third Party Packages
 import pytest
 
 
 @pytest.fixture(autouse=True)
 def logging_config(caplog):
     caplog.set_level(logging.DEBUG)
+
 
 @pytest.fixture
 def credentials_file(tmpdir):

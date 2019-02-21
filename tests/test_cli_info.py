@@ -1,8 +1,8 @@
-import os
+# Standard Library
 from os.path import expanduser
 
+# Third Party Packages
 import pytest
-
 
 from toggl2harvest.scripts.toggl2harvest import cli
 
@@ -14,7 +14,6 @@ def test_can_test_cli(cli_runner, credentials_file):
     assert result.exit_code == 0, result.output
 
     assert f'Configuration Directory: "."' in result.output
-
 
 
 def test_can_set_config_dir_with_option(cli_runner, tmpdir, credentials_file):

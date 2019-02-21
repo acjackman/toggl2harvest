@@ -1,7 +1,9 @@
+# Standard Library
 import logging
 from os import path
 from pathlib import Path
 
+# Third Party Packages
 import requests
 from ruamel.yaml import YAML
 

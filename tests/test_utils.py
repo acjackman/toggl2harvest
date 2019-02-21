@@ -1,11 +1,14 @@
-import pytest
-
+# Standard Library
 from datetime import datetime as dt
 
-from toggl2harvest.utils import parse_start_end, generate_selected_days
+# Third Party Packages
+import pytest
+
+from toggl2harvest.utils import generate_selected_days, parse_start_end
+
 
 class TestParseStartEnd:
-    @pytest.mark.parametrize("start,end,result", [
+    @pytest.mark.parametrize('start,end,result', [
         ('2019-02-20', '2019-02-20', (dt(2019, 2, 20), dt(2019, 2, 20))),
     ])
     def test_parse_start_end(self, start, end, result):
@@ -14,7 +17,7 @@ class TestParseStartEnd:
 
 
 class TestGenerateSelectedDays:
-    @pytest.mark.parametrize("start,end,result", [
+    @pytest.mark.parametrize('start,end,result', [
         (dt(2019, 2, 20), dt(2019, 2, 20), ['2019-02-20']),
         (dt(2019, 1, 1), dt(2019, 1, 2), ['2019-01-01', '2019-01-02']),
         (dt(2019, 1, 1), dt(2019, 1, 5), [
@@ -28,4 +31,3 @@ class TestGenerateSelectedDays:
     def test_generate_selected_days(self, start, end, result):
         selected_days = generate_selected_days(start, end)
         assert selected_days == result
-

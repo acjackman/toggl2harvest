@@ -1,8 +1,13 @@
 # import the really small API
 # Configuration options found at https://github.com/jeffh/sniffer/
-from sniffer.api import file_validator, runnable
+# Standard Library
+# Standard Library
 import os
+
+# Third Party Packages
 import termstyle
+from sniffer.api import file_validator, runnable
+
 
 # you can customize the pass/fail colors like this
 pass_fg_color = termstyle.green

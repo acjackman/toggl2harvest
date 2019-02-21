@@ -1,6 +1,8 @@
+# Standard Library
 import logging
 from time import sleep
 
+# Third Party Packages
 import requests
 from ruamel.yaml import YAML
 
