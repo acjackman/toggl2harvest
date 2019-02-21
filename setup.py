@@ -8,8 +8,9 @@ setup(
     include_package_data=True,
     install_requires=[
         'Click',
+        'dateutil',
         'requests',
-        'pyyaml'
+        'ruamel.yaml',
     ],
     entry_points="""
         [console_scripts]

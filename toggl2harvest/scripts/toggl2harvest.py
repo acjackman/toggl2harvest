@@ -5,9 +5,11 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 import click
+from dateutil import parser as dateutil_parser
+from ruamel.yaml import YAML
 
 # from toggl2harvest.harvest import HarvestCredentials, HarvestSession
-from toggl2harvest import harvest
+from toggl2harvest import harvest, toggl
 from toggl2harvest.utils import (
     calc_total_time,
     cred_file_path,
@@ -29,13 +31,14 @@ class Config(object):
 
 pass_config = click.make_pass_decorator(Config, ensure=True)
 
+
 def get_config_dir(config_dir):
     env_config = os.environ.get('TOGGL2HARVEST_CONFIG')
     log.debug(env_config)
     if config_dir is not None:
         log.debug('Set config_dir from option')
         return expanduser(config_dir)
-    elif env_config is not None :
+    elif env_config is not None:
         log.debug('Set from env_config')
         return expanduser(env_config)
 
@@ -50,7 +53,7 @@ def get_toggl_cred(config):
         raise ValueError('Credentials file does not exist')
 
     try:
-        harvest_cred = harvest.HarvestCredentials.read_from_file(cred_file)
+        return toggl.TogglCredentials.read_from_file(cred_file)
     except Exception as e:
         log.debug('exception caught.', exc_info=True)
         log_msg = 'Could not load Harvest credentials.'
@@ -75,7 +78,7 @@ def get_harvest_cred(config):
         raise ValueError('Credentials file does not exist')
 
     try:
-        harvest_cred = harvest.HarvestCredentials.read_from_file(cred_file)
+        return harvest.HarvestCredentials.read_from_file(cred_file)
     except Exception as e:
         log.debug('exception caught.', exc_info=True)
         log_msg = 'Could not load Harvest credentials.'
@@ -119,7 +122,6 @@ def harvest_cache(config):
         log.debug('exception caught.', exc_info=True)
         log_msg = 'Could not make connect to the Harvest API.'
         log.error(log_msg)
-
 
 
 @cli.command()

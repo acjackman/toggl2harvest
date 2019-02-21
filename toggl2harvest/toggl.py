@@ -2,11 +2,6 @@ import logging
 from time import sleep
 
 import requests
-from yaml import load as load_yaml
-try:
-    from yaml import CLoader as Loader
-except ImportError:
-    from yaml import Loader
 from ruamel.yaml import YAML
 
 

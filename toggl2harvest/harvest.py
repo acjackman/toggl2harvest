@@ -1,12 +1,10 @@
 import logging
 from os import path
+from pathlib import Path
 
 import requests
-from yaml import load as load_yaml, dump as dump_yaml
-try:
-    from yaml import CLoader as Loader, CDumper as Dumper
-except ImportError:
-    from yaml import Loader, Dumper
+from ruamel.yaml import YAML
+
 
 log = logging.getLogger(__name__)
 
@@ -22,8 +20,8 @@ class HarvestCredentials():
 
     @classmethod
     def read_from_file(cls, file_path):
-        with open(file_path, 'r', encoding='utf-8') as f:
-            credentials_dict = load_yaml(f, Loader=Loader)
+        with YAML() as yaml:
+            credentials_dict = yaml.load(file_path)
 
         if not isinstance(credentials_dict, dict):
             raise TypeError('credentials should be a dict.')
@@ -46,24 +44,22 @@ class HarvestSession():
             'User-Agent': credentials.user_agent,
         }
 
-    def _cache_file(self, working_dir):
-        return path.join(working_dir, 'harvest_cache.yml')
+    @classmethod
+    def _cache_file(cls, working_dir):
+        return Path(path.join(working_dir, 'harvest_cache.yml'))
 
     def clear_project_cache(self, working_dir):
         with open(self._cache_file(working_dir), 'w') as f:
             f.write('')
 
-    def read_project_cache(self, working_dir):
-        with open(self._cache_file(working_dir), 'r') as f:
-            return load_yaml(f, Loader=Loader)
+    @classmethod
+    def read_project_cache(cls, working_dir):
+        with YAML() as yaml:
+            return yaml.load(cls._cache_file(working_dir))
 
     def write_project_cache(self, harvest_projects, working_dir):
-        with open(self._cache_file(working_dir), 'r') as f:
-            f.write(dump_yaml(
-                harvest_projects,
-                Dumper=Dumper,
-                default_flow_style=False
-            ))
+        with YAML(output=self._cache_file(working_dir)) as yaml:
+            yaml.dump(harvest_projects)
 
     def update_project_cache(self, working_dir):
         harvest_projects = self.read_project_cache()
@@ -102,3 +98,21 @@ class HarvestSession():
             time_entries = time_entries + time_entries_r['time_entries']
             next_url = time_entries_r['links']['next']
         return time_entries
+
+    def create_time_entry(self, project_id, task_id, spent_date, hours, notes):
+        r = self.session.post(
+            f'{HARVEST_API}/time_entries',
+            json={
+                'project_id': project_id,
+                'task_id': task_id,
+                'spent_date': spent_date,
+                'hours': hours,
+                'notes': notes,
+            }
+        )
+        try:
+            r.raise_for_status()
+        except requests.exceptions.HTTPError:
+            print(r.request.body)
+            raise
+        return r.json()
