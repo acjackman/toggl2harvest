@@ -8,8 +8,8 @@ requests = "*"
 click = "*"
 pyaml = "*"
 "e1839a8" = {path = ".", editable = true}
-sniffer = "*"
-macfsevents = "*"
+python-dateutil = "*"
+"ruamel.yaml" = "*"
 
 [dev-packages]
 ipython = "*"
@@ -17,6 +17,11 @@ pytest = "*"
 pytest-sugar = "*"
 pytest-mock = "*"
 pytest-click = "*"
+sniffer = "*"
+macfsevents = "*"
+"flake8" = "*"
+"flake8-quotes" = "*"
+"flake8-isort" = "*"
 
 [requires]
 python_version = "3.6"

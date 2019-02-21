@@ -8,7 +8,7 @@ setup(
     include_package_data=True,
     install_requires=[
         'Click',
-        'dateutil',
+        'python-dateutil',
         'requests',
         'ruamel.yaml',
     ],
