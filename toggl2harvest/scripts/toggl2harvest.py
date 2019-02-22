@@ -214,8 +214,13 @@ def download_toggl_data(config, start, end):
 
     # Write out raw yaml for the dates
     for day, day_entries in daily_time_entries.items():
+        day_file = data_file_path(config, day)
         # TODO: Check that date hasn't been opened before
-        with YAML(output=data_file_path(config, day)) as yaml:
+        if day_file.exists():
+            click.echo(f'{day} exists, skipping')
+            continue  # Don't overwrite existing data
+
+        with YAML(output=day_file) as yaml:
             for entry in day_entries['entries']:
                 yaml.dump(entry)
 
