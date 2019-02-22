@@ -18,6 +18,7 @@ class TestParseStartEnd:
 
 class TestGenerateSelectedDays:
     @pytest.mark.parametrize('start,end,result', [
+        (dt(2019, 2, 20), dt(2019, 2, 20, 1), ['2019-02-20']),
         (dt(2019, 2, 20), dt(2019, 2, 20), ['2019-02-20']),
         (dt(2019, 1, 1), dt(2019, 1, 2), ['2019-01-01', '2019-01-02']),
         (dt(2019, 1, 1), dt(2019, 1, 5), [

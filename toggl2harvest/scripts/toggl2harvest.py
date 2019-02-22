@@ -142,7 +142,6 @@ def download_toggl_data(config, start, end):
 
     with YAML() as yaml:
         cred_file = yaml.load(cred_file_p)
-        print(cred_file)
         cred_file_toggl = cred_file['toggl']
         toggl_params = cred_file_toggl['params']
 
@@ -222,8 +221,8 @@ def download_toggl_data(config, start, end):
 
 
 @cli.command()
-@click.option('--start', default=str(datetime.today()))
-@click.option('--end', default=str(datetime.today()))
+@click.option('--start', default=f'{datetime.today():%Y-%m-%d}')
+@click.option('--end', default=f'{datetime.today():%Y-%m-%d}')
 @pass_config
 def validate_data(config, start, end):
     start_date, end_date = parse_start_end(start, end)
@@ -271,7 +270,6 @@ def validate_data(config, start, end):
                     data['total_time'] = fmt_timedelta(total_time)
 
                     # Only set these if they aren't already set
-
                     try:
                         if data['harvest']['project_id'] is None:
                             log.debug('harvest.project_id not found')
@@ -319,8 +317,8 @@ def validate_data(config, start, end):
 
 
 @cli.command()
-@click.option('--start', default=str(datetime.today()))
-@click.option('--end', default=str(datetime.today()))
+@click.option('--start', default=f'{datetime.today():%Y-%m-%d}')
+@click.option('--end', default=f'{datetime.today():%Y-%m-%d}')
 @pass_config
 def upload_to_harvest(config, start, end):
     start_date, end_date = parse_start_end(start, end)
