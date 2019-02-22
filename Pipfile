@@ -10,6 +10,7 @@ pyaml = "*"
 "e1839a8" = {path = ".", editable = true}
 python-dateutil = "*"
 "ruamel.yaml" = "*"
+boltons = "*"
 
 [dev-packages]
 ipython = "*"
