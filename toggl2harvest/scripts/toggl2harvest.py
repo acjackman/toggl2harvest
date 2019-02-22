@@ -227,6 +227,12 @@ def download_toggl_data(config, start, end):
                 yaml.dump(entry)
 
 
+def update_total_time(data):
+    total_time = calc_total_time(data['time_entries'])
+    data['total_time'] = fmt_timedelta(total_time)
+    return data
+
+
 @cli.command()
 @click.option('--start', default=f'{datetime.today():%Y-%m-%d}')
 @click.option('--end', default=f'{datetime.today():%Y-%m-%d}')
@@ -243,6 +249,15 @@ def validate_data(config, start, end):
     def get_harvest_project(project_code):
         return PROJECT_MAPPING[project_code]['harvest_project']
 
+    def auto_set_harvest_task(data):
+        proj_code = data['project_code']
+        harvest_task_name = data['harvest_task_name']
+        if proj_code is not None and harvest_task_name is None:
+            proj_map = PROJECT_MAPPING[proj_code]
+            data['harvest_task_name'] = proj_map.get('default_task', default=None)
+
+        return data
+
     # Get Harvest Cache
     HARVEST_CACHE = harvest.HarvestSession.read_project_cache(
         config.config_dir)
@@ -257,10 +272,43 @@ def validate_data(config, start, end):
     def get_harvest_task(proj_id, task_name):
         return HARVEST_CACHE[proj_id]['task_names'][task_name]
 
+    def set_harvest_project_task(i, data):
+        # Get or set harvest project
+        if data['harvest']['project_id'] is None:
+            log.debug('harvest.project_id not found')
+            proj_code = data['project_code']
+            try:
+                harvest_proj = get_harvest_project(proj_code)
+            except KeyError as e:
+                if str(e) == 'None' and file_rounds != 0:
+                    log.info(f'Project missing for entry {i}')
+                elif file_rounds != 0:
+                    log.info(f'Project "{str(e)}" not found')
+                return (data, True)
+            data['harvest']['project_id'] = harvest_proj
+        else:
+            harvest_proj = data['harvest']['project_id']
+
+        # Set harvest task
+        if data['harvest']['task_id'] is None:
+            log.debug('harvest.task_id not found')
+            task_name = data['harvest_task_name']
+            try:
+                harvest_task = get_harvest_task(
+                    harvest_proj, task_name)
+            except KeyError as e:
+                if str(e) == 'None' and file_rounds != 0:
+                    log.info(f'Task missing for entry {i}')
+                elif file_rounds != 0:
+                    log.info(f'Task "{str(e)}" not found in project')
+                return (data, True)
+            data['harvest']['task_id'] = harvest_task
+
+        return (data, file_valid)
+
     # Loop through and recalculate total time, verify other things?
     for day in selected_days:
         day_file = data_file_path(config, day)
-        tmp_file = day_file.with_suffix('.yml.tmp')
 
         # Run though and check file, re-edit until it's valid
         file_valid = False
@@ -268,57 +316,23 @@ def validate_data(config, start, end):
         while not file_valid:
             # Check file
             file_errors = 0
-            with YAML(output=tmp_file) as yaml:
-                for i, data in enumerate(yaml.load_all(day_file)):
-                    if data['time_entries'] is None:
-                        log.debug(f'time entries is null for entry {i}')
-                        continue  # If there are no time entries, move to next
-                    total_time = calc_total_time(data['time_entries'])
-                    data['total_time'] = fmt_timedelta(total_time)
-                    proj_code = data['project_code']
-                    harvest_task_name = data['harvest_task_name']
-                    if proj_code is not None and harvest_task_name is None:
-                        proj_map = PROJECT_MAPPING[proj_code]
-                        data['harvest_task_name'] = proj_map.get('default_task', default=None)
 
-                    # Only set these if they aren't already set
-                    try:
-                        if data['harvest']['project_id'] is None:
-                            log.debug('harvest.project_id not found')
-                            proj_code = data['project_code']
-                            try:
-                                harvest_proj = get_harvest_project(proj_code)
-                            except KeyError as e:
-                                file_errors += 1
-                                if str(e) == 'None' and file_rounds != 0:
-                                    log.info(f'Project missing for entry {i}')
-                                elif file_rounds != 0:
-                                    log.info(f'Project "{str(e)}" not found')
-                                raise
+            def update_entry(i, data):
+                global file_errors
+                if data['time_entries'] is None:
+                    log.debug(f'time entries is null for entry {i}')
+                    return data  # If there are no time entries, move to next
 
-                            data['harvest']['project_id'] = harvest_proj
-                        else:
-                            harvest_proj = data['harvest']['project_id']
-                        if data['harvest']['task_id'] is None:
-                            log.debug('harvest.task_id not found')
-                            task_name = data['harvest_task_name']
-                            try:
-                                harvest_task = get_harvest_task(
-                                    harvest_proj, task_name)
-                            except KeyError as e:
-                                file_errors += 1
-                                if str(e) == 'None' and file_rounds != 0:
-                                    log.info(f'Task missing for entry {i}')
-                                elif file_rounds != 0:
-                                    log.info(f'Task "{str(e)}" not found in project')
-                                raise
-                            data['harvest']['task_id'] = harvest_task
-                    except KeyError:
-                        pass
+                # Update total time
+                data = update_total_time(data)
+                data = auto_set_harvest_task(data)
+                data, has_harvest_ids = set_harvest_project_task(i, data)
+                if not has_harvest_ids:
+                    file_errors += 1
 
-                    yaml.dump(data)
-            day_file.unlink()
-            tmp_file.rename(day_file)
+                return data
+
+            operate_on_day_data(day_file, update_entry)
             log.debug(f'file errors: {file_errors}')
             # Edit file to update
             file_valid = file_errors == 0
