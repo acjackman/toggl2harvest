@@ -6,6 +6,7 @@ from pathlib import Path
 
 # Third Party Packages
 from dateutil import parser as dateutil_parser
+from ruamel.yaml import YAML
 
 
 log = logging.getLogger(__name__)
@@ -64,3 +65,15 @@ def generate_selected_days(start, end):
         selected_days.append(selected_days[-1] + timedelta(hours=24))
     selected_days = [d.strftime('%Y-%m-%d') for d in selected_days]
     return selected_days
+
+
+def operate_on_day_data(day_file, operate):
+    tmp_file = day_file.with_suffix('.yml.tmp')
+
+    with YAML(output=tmp_file) as yaml:
+        for i, data in enumerate(yaml.load_all(day_file)):
+            data = operate(i, data)
+            yaml.dump(data)
+
+    day_file.unlink()
+    tmp_file.rename(day_file)

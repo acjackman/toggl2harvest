@@ -9,6 +9,7 @@ from pathlib import Path
 import click
 from dateutil import parser as dateutil_parser
 from ruamel.yaml import YAML
+from requests.exceptions import HTTPError
 
 # from toggl2harvest.harvest import HarvestCredentials, HarvestSession
 from toggl2harvest import harvest, toggl
@@ -19,6 +20,7 @@ from toggl2harvest.utils import (
     delta_hours,
     fmt_timedelta,
     generate_selected_days,
+    operate_on_day_data,
     parse_start_end,
 )
 
@@ -330,26 +332,35 @@ def upload_to_harvest(config, start, end):
     selected_days = generate_selected_days(start_date, end_date)
 
     harvest_cred = get_harvest_cred(config)
-    config.harvest_api = harvest.HarvestSession(harvest_cred)
+    harvest_api = harvest.HarvestSession(harvest_cred)
 
-    entries = {}
     for day in selected_days:
         day_file = data_file_path(config, day)
-        entries[day] = []
-        with YAML() as yaml:
-            for data in yaml.load_all(day_file):
-                total_time = calc_total_time(data['time_entries'])
-                entries[day].append({
-                    'project_id': data['harvest']['project_id'],
-                    'task_id': data['harvest']['task_id'],
-                    'spent_date': day,
-                    'hours': delta_hours(total_time),
-                    'notes': data['description'],
-                })
 
-    for day in selected_days:
-        for i, entry in enumerate(entries[day]):
-            config.harvest_api.create_time_entry(
-                **entry
-            )
-            log.info(f'Uploaded {day}#{i}')
+        def parse_and_upload(i, data):
+            total_time = calc_total_time(data['time_entries'])
+            entry_label = f'{day}#{i:02d}'
+            entry = {
+                'project_id': data['harvest']['project_id'],
+                'task_id': data['harvest']['task_id'],
+                'spent_date': day,
+                'hours': delta_hours(total_time),
+                'notes': data['description'],
+            }
+            if not data['is_billable']:
+                log.info(f'{entry_label}, skipping')
+                return data
+            if 'uploaded' in data['harvest'] and data['harvest']['uploaded'] is not None:
+                log.info(f'{entry_label} Already uploaded, skipping')
+                return data
+            try:
+                harvest_api.create_time_entry(
+                    **entry
+                )
+                log.info(f'{entry_label} Uploaded')
+                data['harvest']['uploaded'] = f'{datetime.today():%Y-%m-%dT%H:%M:%S%z}'
+            except HTTPError:
+                log.warning(f'{entry_label} Error Uploading')
+            return data
+
+        operate_on_day_data(day_file, parse_and_upload)
