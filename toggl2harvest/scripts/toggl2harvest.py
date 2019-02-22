@@ -275,6 +275,11 @@ def validate_data(config, start, end):
                         continue  # If there are no time entries, move to next
                     total_time = calc_total_time(data['time_entries'])
                     data['total_time'] = fmt_timedelta(total_time)
+                    proj_code = data['project_code']
+                    harvest_task_name = data['harvest_task_name']
+                    if proj_code is not None and harvest_task_name is None:
+                        proj_map = PROJECT_MAPPING[proj_code]
+                        data['harvest_task_name'] = proj_map.get('default_task', default=None)
 
                     # Only set these if they aren't already set
                     try:
