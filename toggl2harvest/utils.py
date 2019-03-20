@@ -12,10 +12,6 @@ from ruamel.yaml import YAML
 log = logging.getLogger(__name__)
 
 
-def cred_file_path(config_dir):
-    return Path(os.path.join(config_dir, 'credentials.yaml'))
-
-
 def strp_iso8601(datetime_str):
     correct_format = datetime_str[:22] + datetime_str[23:]
     return datetime.strptime(correct_format, '%Y-%m-%dT%H:%M:%S%z')
@@ -47,10 +43,6 @@ def calc_total_time(time_entries):
         # TODO if start > end
         total_time += end - start
     return total_time
-
-
-def data_file_path(config, date_str):
-    return Path(os.path.join(config.config_dir, 'data', f'{date_str}.yml'))
 
 
 def parse_start_end(start, end):
