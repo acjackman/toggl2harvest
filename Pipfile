@@ -23,6 +23,7 @@ macfsevents = "*"
 "flake8" = "*"
 "flake8-quotes" = "*"
 "flake8-isort" = "*"
+pytest-cov = "*"
 
 [requires]
 python_version = "3.6"
