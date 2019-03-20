@@ -1,6 +1,7 @@
 import logging
 from os.path import expanduser
 from datetime import datetime, timedelta
+from pathlib import Path
 
 # Third Party Packages
 import click
@@ -10,7 +11,6 @@ from boltons.cacheutils import cachedproperty
 
 from toggl2harvest import toggl, harvest
 from toggl2harvest.utils import strp_iso8601
-
 
 log = logging.getLogger(__name__)
 
@@ -23,11 +23,11 @@ class TogglHarvestApp(object):
     @cachedproperty
     def cred_file(self):
         """Path to the credentialas file for this application."""
-        return click.Path(self.config_dir, 'credentials.yaml')
+        return Path(self.config_dir, 'credentials.yaml')
 
-    def data_file_path(config, date_str):
+    def data_file_path(self, date_str):
         """Path to a data file for this application."""
-        return click.Path(config.config_dir, 'data', f'{date_str}.yml')
+        return Path(self.config_dir, 'data', f'{date_str}.yml')
 
     @cachedproperty
     def toggl_cred(self):
