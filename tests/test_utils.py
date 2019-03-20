@@ -1,10 +1,10 @@
 # Standard Library
-from datetime import datetime as dt
+from datetime import datetime as dt, timedelta as td
 
 # Third Party Packages
 import pytest
 
-from toggl2harvest.utils import generate_selected_days, parse_start_end
+from toggl2harvest import utils
 
 
 class TestParseStartEnd:
@@ -12,7 +12,7 @@ class TestParseStartEnd:
         ('2019-02-20', '2019-02-20', (dt(2019, 2, 20), dt(2019, 2, 20))),
     ])
     def test_parse_start_end(self, start, end, result):
-        parsed = parse_start_end(start, end)
+        parsed = utils.parse_start_end(start, end)
         assert parsed == result
 
 
@@ -30,5 +30,5 @@ class TestGenerateSelectedDays:
         ]),
     ])
     def test_generate_selected_days(self, start, end, result):
-        selected_days = generate_selected_days(start, end)
+        selected_days = utils.generate_selected_days(start, end)
         assert selected_days == result
