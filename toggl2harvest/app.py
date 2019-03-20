@@ -1,17 +1,12 @@
 # Standard Library
 import logging
-from datetime import datetime, timedelta
 from os.path import expanduser
 from pathlib import Path
 
 # Third Party Packages
-import click
 from boltons.cacheutils import cachedproperty
-from dateutil import parser as dateutil_parser
-from ruamel.yaml import YAML
 
 from toggl2harvest import harvest, toggl
-from toggl2harvest.utils import strp_iso8601
 
 
 log = logging.getLogger(__name__)

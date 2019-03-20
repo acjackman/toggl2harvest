@@ -1,5 +1,7 @@
 # Standard Library
-from datetime import datetime as dt, timedelta as td, timezone as tz
+from datetime import datetime as dt
+from datetime import timedelta as td
+from datetime import timezone as tz
 
 # Third Party Packages
 import pytest
@@ -51,7 +53,7 @@ class TestDeltaHours:
         (td(seconds=1), 1 / HOUR_IN_SECONDS),
         (td(seconds=59), 59 / HOUR_IN_SECONDS),
         (td(minutes=1), 60 / HOUR_IN_SECONDS),
-        (td(minutes=1, seconds=59), 119 / HOUR_IN_SECONDS ),
+        (td(minutes=1, seconds=59), 119 / HOUR_IN_SECONDS),
         (td(minutes=59), 3540 / HOUR_IN_SECONDS),
         (td(minutes=60), 1),
         (td(hours=25), 25),
@@ -78,8 +80,7 @@ class TestCalcTotalTime:
             [{
                 's': '2019-01-01T00:00:00-07:00',
                 'e': '2019-01-01T00:00:00-07:00',
-            },
-            {
+            }, {
                 's': '2019-01-01T00:00:00-07:00',
                 'e': '2019-01-01T00:00:00-07:00',
             }],
@@ -98,8 +99,7 @@ class TestCalcTotalTime:
             [{
                 's': '2019-01-01T00:00:00-07:00',
                 'e': '2019-01-01T00:00:01-07:00',
-            },
-            {
+            }, {
                 's': '2019-01-01T00:00:00-07:00',
                 'e': '2019-01-01T00:00:01-07:00',
             }],
@@ -110,7 +110,7 @@ class TestCalcTotalTime:
             [{
                 's': '2019-01-01T00:00:00-07:00',
                 'e': '2019-01-02T00:00:00-07:00',
-            },],
+            }],
             td(days=1)
         ),
         # Time Zones should be taken into account

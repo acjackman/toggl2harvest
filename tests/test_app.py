@@ -2,7 +2,6 @@
 from pathlib import Path
 
 # Third Party Packages
-import click
 import pytest
 
 from toggl2harvest.app import TogglHarvestApp
@@ -17,7 +16,7 @@ class TestCredFile:
     def test_default_path_correct(self, app):
         assert app.cred_file == Path('.', 'credentials.yaml')
 
-    @pytest.mark.parametrize('config_dir',[
+    @pytest.mark.parametrize('config_dir', [
         '2019-01-01',
         'foobar',
     ])
@@ -30,8 +29,9 @@ class TestCredFile:
         instance_2 = app.cred_file
         assert instance_1 is instance_2
 
+
 class TestDataFilePath:
-    @pytest.mark.parametrize('datestr,file_path',[
+    @pytest.mark.parametrize('datestr,file_path', [
         ('2019-01-01', './data/2019-01-01.yml'),
         ('foobar', './data/foobar.yml'),
     ])
@@ -49,8 +49,8 @@ class TestTogglCred:
         mock.assert_called_with(cred_file)
 
     def test_toggl_cred_returns_same_instance(self, mocker, app):
-        cred_file = mocker.patch.object(app, 'cred_file')
-        mock = mocker.patch('toggl2harvest.toggl.TogglCredentials.read_from_file')
+        mocker.patch.object(app, 'cred_file')
+        mocker.patch('toggl2harvest.toggl.TogglCredentials.read_from_file')
 
         instance_1 = app.toggl_cred
         instance_2 = app.toggl_cred
@@ -68,8 +68,8 @@ class TestHarvestCred:
         mock.assert_called_with(cred_file)
 
     def test_harvest_cred_returns_same_instance(self, mocker, app):
-        cred_file = mocker.patch.object(app, 'cred_file')
-        mock = mocker.patch('toggl2harvest.harvest.HarvestCredentials.read_from_file')
+        mocker.patch.object(app, 'cred_file')
+        mocker.patch('toggl2harvest.harvest.HarvestCredentials.read_from_file')
 
         instance_1 = app.harvest_cred
         instance_2 = app.harvest_cred
