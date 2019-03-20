@@ -87,16 +87,6 @@ class TestTogglAPI:
 
         mock.assert_called_with(mock_cred)
 
-    @pytest.mark.skip
-    def test_toggl_api_returns_same_instance(self, mocker, app):
-        app.toggl_cred = mocker.PropertyMock()
-        mock = mocker.patch('toggl2harvest.harvest.TogglSession.__init__', return_value=None)
-
-        instance_1 = app.toggl_api
-        instance_2 = app.toggl_api
-
-        assert instance_1 is instance_2
-
 
 class TestHarvestAPI:
     def test_harvest_api_calls_correct_function(self, mocker, app):
@@ -107,16 +97,6 @@ class TestHarvestAPI:
         app.harvest_api
 
         mock.assert_called_with(mock_cred)
-
-    @pytest.mark.skip
-    def test_harvest_api_returns_same_instance(self, mocker, app):
-        app.harvest_cred = mocker.PropertyMock()
-        mock = mocker.patch('toggl2harvest.harvest.HarvestSession.__init__', return_value=None)
-
-        instance_1 = app.harvest_api
-        instance_2 = app.harvest_api
-
-        assert instance_1 is instance_2
 
 
 class TestCacheHarvestProjects:
