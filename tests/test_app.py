@@ -1,7 +1,9 @@
+# Standard Library
 from pathlib import Path
 
-import pytest
+# Third Party Packages
 import click
+import pytest
 
 from toggl2harvest.app import TogglHarvestApp
 
