@@ -6,19 +6,12 @@ from time import sleep
 import requests
 from ruamel.yaml import YAML
 
+from toggl2harvest.utils import iso_date, iso_timestamp
 
 log = logging.getLogger(__name__)
 
 TIME_API = 'https://www.toggl.com/api/v8'
 REPORTS_API = 'https://toggl.com/reports/api/v2'
-
-
-def iso_date(time_value):
-    return time_value.strftime('%Y-%m-%d')
-
-
-def iso_timestamp(time_value):
-    return time_value.strftime('%Y-%m-%dT%H:%M:%S%z')
 
 
 class TogglCredentials():

@@ -10,6 +10,14 @@ from ruamel.yaml import YAML
 log = logging.getLogger(__name__)
 
 
+def iso_date(time_value):
+    return time_value.strftime('%Y-%m-%d')
+
+
+def iso_timestamp(time_value):
+    return time_value.strftime('%Y-%m-%dT%H:%M:%S%z')
+
+
 def strp_iso8601(datetime_str):
     correct_format = datetime_str[:22] + datetime_str[23:]
     return datetime.strptime(correct_format, '%Y-%m-%dT%H:%M:%S%z')
