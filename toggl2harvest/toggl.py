@@ -4,6 +4,7 @@ from time import sleep
 
 # Third Party Packages
 import requests
+from boltons.cacheutils import cachedproperty
 from ruamel.yaml import YAML
 
 from toggl2harvest.utils import iso_date, iso_timestamp
@@ -76,3 +77,21 @@ class TogglSession():
                     sleep(1)
 
         return time_entries
+
+    def toggl_download_params(self, cred_file):
+        try:
+            with YAML() as yaml:
+                creds = yaml.load(cred_file)
+        except TypeError:
+            return {}
+
+        try:
+            creds_toggl = creds['toggl']
+            params = creds_toggl['dowload_data_params']
+        except KeyError:
+            return {}
+
+        if not isinstance(params, dict) :
+            return {}
+
+        return params
