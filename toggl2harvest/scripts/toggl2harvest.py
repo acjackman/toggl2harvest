@@ -262,6 +262,9 @@ def validate_data(config, start, end):
         day_file = data_file_path(config, day)
         tmp_file = day_file.with_suffix('.yml.tmp')
 
+        if not day_file.exists():
+            continue
+
         # Run though and check file, re-edit until it's valid
         file_valid = False
         file_rounds = 0
@@ -341,6 +344,9 @@ def upload_to_harvest(config, start, end):
 
     for day in selected_days:
         day_file = data_file_path(config, day)
+
+        if not day_file.exists():
+            continue
 
         def parse_and_upload(i, data):
             total_time = calc_total_time(data['time_entries'])
