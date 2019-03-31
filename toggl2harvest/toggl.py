@@ -1,18 +1,24 @@
 # Standard Library
 import logging
-from time import sleep
+import time
 
 # Third Party Packages
 import requests
 from boltons.cacheutils import cachedproperty
+from requests.exceptions import HTTPError
 from ruamel.yaml import YAML
 
 from toggl2harvest.utils import iso_date, iso_timestamp
+
 
 log = logging.getLogger(__name__)
 
 TIME_API = 'https://www.toggl.com/api/v8'
 REPORTS_API = 'https://toggl.com/reports/api/v2'
+
+
+class InvalidCredentialsError(Exception):
+    pass
 
 
 class TogglCredentials():
@@ -60,22 +66,26 @@ class TogglSession():
             'page': 1,
         }
         time_entries = []
-        api_calls = 0
-        while True:
-            r = self.session.get(url, params=params)
-            r.raise_for_status()
-            time_entries_r = r.json()
-            time_entries = time_entries + time_entries_r['data']
+        first_call = True
+        try:
+            while True:
+                r = self.session.get(url, params=params)
+                r.raise_for_status()
+                time_entries_r = r.json()
+                time_entries = time_entries + time_entries_r['data']
 
-            api_calls += 1
+                first_call = False  # Made the first api call
 
-            if len(time_entries) >= time_entries_r['total_count']:
-                break
-            else:
-                params['page'] += 1
-                if api_calls > 1:
-                    sleep(1)
-
+                if len(time_entries) >= time_entries_r['total_count']:
+                    break
+                else:
+                    params['page'] += 1
+                    if not first_call:
+                        time.sleep(1)
+        except HTTPError as e:
+            if e.response.status_code == 401:
+                raise InvalidCredentialsError()
+            raise
         return time_entries
 
     def toggl_download_params(self, cred_file):
