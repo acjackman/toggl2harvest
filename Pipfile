@@ -10,6 +10,7 @@ click = "*"
 python-dateutil = "*"
 "ruamel.yaml" = "*"
 boltons = "*"
+marshmallow = "*"
 
 [dev-packages]
 ipython = "*"
@@ -26,3 +27,6 @@ pytest-cov = "*"
 
 [requires]
 python_version = "3.6"
+
+[pipenv]
+allow_prereleases = true
