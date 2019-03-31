@@ -22,6 +22,11 @@ class TogglHarvestApp(object):
         """Path to the credentialas file for this application."""
         return Path(self.config_dir, 'credentials.yaml')
 
+    @cachedproperty
+    def data_dir(self):
+        """Path to the credentialas file for this application."""
+        return Path(self.config_dir, 'data')
+
     def data_file_path(self, date_str):
         """Path to a data file for this application."""
         return Path(self.config_dir, 'data', f'{date_str}.yml')
@@ -44,3 +49,11 @@ class TogglHarvestApp(object):
 
     def cache_harvest_projects(self):
         self.harvest_api.update_project_cache(self.config_dir)
+
+    def download_toggl_data(self, start, end):
+        toggl_time_entries = self.toggl_api.retrieve_time_entries(
+            start,
+            end,
+            params=self.toggl_api.toggl_download_params(self.cred_file)
+        )
+        self.toggl_api.write_report_data(toggl_time_entries, self.data_dir)

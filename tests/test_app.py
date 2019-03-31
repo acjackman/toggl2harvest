@@ -1,4 +1,5 @@
 # Standard Library
+from datetime import datetime as dt
 from pathlib import Path
 
 # Third Party Packages
@@ -29,6 +30,23 @@ class TestCredFile:
         instance_2 = app.cred_file
         assert instance_1 is instance_2
 
+
+class TestDataDir:
+    def test_default_path_correct(self, app):
+        assert app.data_dir == Path('.', 'data')
+
+    @pytest.mark.parametrize('config_dir', [
+        '2019-01-01',
+        'foobar',
+    ])
+    def test_correct_path(self, app, config_dir):
+        app.config_dir = config_dir
+        assert app.data_dir == Path(config_dir, 'data')
+
+    def test_cred_file_returns_same_instance(self, app):
+        instance_1 = app.data_dir
+        instance_2 = app.data_dir
+        assert instance_1 is instance_2
 
 class TestDataFilePath:
     @pytest.mark.parametrize('datestr,file_path', [
@@ -107,3 +125,29 @@ class TestCacheHarvestProjects:
         app.cache_harvest_projects()
 
         mock_api.update_project_cache.assert_called_with(app.config_dir)
+
+
+class TestDownloadTogglData:
+    def test_calls_correct_function(self, mocker, app):
+        mock_cred_file = mocker.PropertyMock()
+        app.cred_file = mock_cred_file
+        mock_data_dir = mocker.PropertyMock()
+        app.data_dir = mock_data_dir
+        mock_api = mocker.PropertyMock()
+        mock_api.toggl_download_params.return_value = {'fake': 'params'}
+        mock_api.retrieve_time_entries.return_value = [{'entry': 1}, {'entry': 2}]
+        app.toggl_api = mock_api
+
+
+        app.download_toggl_data(dt(2019, 1, 1), dt(2019, 1, 1))
+
+        mock_api.toggl_download_params.assert_called_with(mock_cred_file)
+        mock_api.retrieve_time_entries.assert_called_with(
+            dt(2019, 1, 1),
+            dt(2019, 1, 1),
+            params={'fake': 'params'},
+        )
+        mock_api.write_report_data.assert_called_with(
+            [{'entry': 1}, {'entry': 2}],
+            mock_data_dir,
+        )
