@@ -6,7 +6,6 @@ name = "pypi"
 [packages]
 requests = "*"
 click = "*"
-pyaml = "*"
 "e1839a8" = {path = ".", editable = true}
 python-dateutil = "*"
 "ruamel.yaml" = "*"
