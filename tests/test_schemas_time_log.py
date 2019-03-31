@@ -28,6 +28,18 @@ def make_valid_time_log(valid_tuples):
             'description': vt.description,
             'is_billable': vt.is_billable,
             'time_entries': vt.time_entries_serialized,
+            'toggl': {
+                'client': None,
+                'project': None,
+                'task': None,
+                'is_billable': None,
+            },
+            'harvest': {
+                'project_id': None,
+                'task_name': None,
+                'task_id': None,
+                'uploaded': None,
+            }
         },
         models.TimeLog(
             project_code=vt.project_code,
@@ -115,6 +127,8 @@ class TestTimeEntrySchema:
         assert new_obj.project_code == time_log.project_code
         assert new_obj.description == time_log.description
         assert new_obj.is_billable == time_log.is_billable
+        assert isinstance(new_obj.toggl, models.TogglData)
+        assert isinstance(new_obj.harvest, models.HarvestData)
 
     invalid_data = [
         # Invalid values
