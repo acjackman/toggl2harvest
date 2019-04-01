@@ -10,6 +10,7 @@ from marshmallow.exceptions import ValidationError
 
 from toggl2harvest import models, schemas
 
+
 TimeLogData = collections.namedtuple(
     'TimeLogData',
     ' '.join([

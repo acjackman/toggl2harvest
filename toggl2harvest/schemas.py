@@ -24,6 +24,21 @@ class TogglDataSchema(Schema):
         return models.TogglData(**data)
 
 
+class TogglReportEntrySchema(Schema):
+    client = fields.Str()
+    project = fields.Str()
+    task = fields.Str()
+    description = fields.Str()
+    is_billable = fields.Boolean()
+    start = fields.LocalDateTime()
+    end = fields.LocalDateTime()
+    tags = fields.Str(many=True)
+
+    @post_load
+    def make_toggl_report_entry(self, data):
+        return models.TogglReportEntry(**data)
+
+
 class HarvestDataSchema(Schema):
     project_id = fields.Integer(required=False, allow_none=True)
     task_name = fields.Str(required=False, allow_none=True)

@@ -8,6 +8,7 @@ from boltons.cacheutils import cachedproperty
 from requests.exceptions import HTTPError
 from ruamel.yaml import YAML
 
+from toggl2harvest.schemas import TogglReportEntrySchema
 from toggl2harvest.utils import iso_date, iso_timestamp
 
 
@@ -105,3 +106,45 @@ class TogglSession():
             return {}
 
         return params
+
+    def write_report_data(self, report_data, data_dir=None):
+        schema = TogglReportEntrySchema(many=True)
+        report_entries = schema.load(report_data)
+        report_entries.sort(key=lambda x: x.start)
+
+        daily_time_entries = {}
+        for toggl_entry in toggl_time_entries:
+            start_date = toggl_entry.start.date()
+            while True:
+                try:
+                    days_entries = daily_time_entries[start_date]['entries']
+                    days_unqiue_map = daily_time_entries[start_date]['unique_map']
+                except KeyError:
+                    daily_time_entries[start_date] = {
+                        'entries': [],
+                        'unique_map': {},
+                    }
+                    continue
+                break
+
+            toggl_key = toggl_entry.unique_key()
+
+            try:
+                log = days_unqiue_map[toggl_key]
+                log.add_to_time_entries(toggl_entry)
+            except KeyError:
+                log = TimeLog.build_from_toggl_entry(toggl_entry)
+                days_unqiue_map[toggl_key] = log
+                days_entries.append(log)
+
+        # Write out raw yaml for the dates
+        for day, day_entries in daily_time_entries.items():
+            day_file = Path(data_dir, f'{day:%Y-%m-%d}.yml')
+            # TODO: Check that date hasn't been opened before
+            if day_file.exists():
+                click.echo(f'{day} exists, skipping')
+                continue  # Don't overwrite existing data
+
+            with YAML(output=day_file) as yaml:
+                for entry in day_entries['entries']:
+                    yaml.dump(entry)
