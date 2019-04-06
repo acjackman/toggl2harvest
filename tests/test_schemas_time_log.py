@@ -5,7 +5,6 @@ from datetime import timezone
 
 # Third Party Packages
 import pytest
-from dateutil.tz import tzoffset
 from marshmallow.exceptions import ValidationError
 
 from toggl2harvest import models, schemas
@@ -21,6 +20,7 @@ TimeLogData = collections.namedtuple(
         'time_entries_data',
     ])
 )
+
 
 def make_valid_time_log(valid_tuples):
     return [
@@ -42,7 +42,7 @@ def make_valid_time_log(valid_tuples):
                 'uploaded': None,
             }
         },
-        models.TimeLog(
+            models.TimeLog(
             project_code=vt.project_code,
             description=vt.description,
             is_billable=vt.is_billable,
@@ -50,6 +50,7 @@ def make_valid_time_log(valid_tuples):
         ))
         for vt in valid_tuples
     ]
+
 
 class TestTimeEntrySchema:
     @pytest.fixture
