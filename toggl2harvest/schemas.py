@@ -32,7 +32,7 @@ class TogglReportEntrySchema(Schema):
     is_billable = fields.Boolean()
     start = fields.LocalDateTime()
     end = fields.LocalDateTime()
-    tags = fields.Str(many=True)
+    tags = fields.List(fields.Str())
 
     @post_load
     def make_toggl_report_entry(self, data):
