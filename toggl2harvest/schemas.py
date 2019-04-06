@@ -5,8 +5,8 @@ from . import models
 
 
 class TimeEntrySchema(Schema):
-    s = fields.LocalDateTime(attribute="start")
-    e = fields.LocalDateTime(attribute="end")
+    s = fields.LocalDateTime(attribute='start')
+    e = fields.LocalDateTime(attribute='end')
 
     @post_load
     def make_time_entry(self, data):
