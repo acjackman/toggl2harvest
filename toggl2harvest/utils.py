@@ -65,14 +65,9 @@ def generate_selected_days(start, end):
     return selected_days
 
 
-def operate_on_day_data(day_file, operate, **kwargs):
-    tmp_file = day_file.with_suffix('.yml.tmp')
-
-    with YAML(output=tmp_file) as yaml:
-        for i, data in enumerate(yaml.load_all(day_file)):
+def operate_on_day_data(input, output, operate, **kwargs):
+    with YAML(output=output) as yaml:
+        for i, data in enumerate(yaml.load_all(input)):
             data, ctx = operate(i, data, **kwargs)
             yaml.dump(data)
-
-    day_file.unlink()
-    tmp_file.rename(day_file)
     return ctx
