@@ -1,3 +1,8 @@
+import logging
+
+log = logging.getLogger(__name__)
+
+
 class TimeEntry:
     def __init__(self, start, end):
         self.start = start
@@ -9,6 +14,7 @@ class TimeEntry:
             start=report_entry.start,
             end=report_entry.end,
         )
+
 
 class TogglReportEntry:
     def __init__(
@@ -58,6 +64,18 @@ class HarvestData:
         self.uploaded = uploaded
 
 
+class IncompleteHarvestData(Exception):
+    pass
+
+
+class MissingHarvestProject(IncompleteHarvestData):
+    pass
+
+
+class MissingHarvestTask(IncompleteHarvestData):
+    pass
+
+
 class TimeLog:
     def __init__(
         self, project_code, description, is_billable, time_entries,
@@ -92,3 +110,56 @@ class TimeLog:
         entry = TimeEntry.build_from_toggl_entry(report_entry)
         self.time_entries.append(entry)
         return entry
+
+    def update_harvest_project_task(self):
+        if self.harvest.project_id is None:
+            log.debug('harvest.project_id not found')
+
+    def update_harvest_tasks(self, project_mapping, harvest_cache):
+        # Get or set harvest project
+        if self.harvest.project_id is None:
+            log.debug('harvest.project_id not found')
+            try:
+                harvest_proj = project_mapping.harvest_project(self.project_code)
+                self.harvest.project_id = harvest_proj
+            except KeyError as e:
+                raise MissingHarvestProject()
+        else:
+            harvest_proj = self.harvest.project_id
+
+        # Set harvest task
+        if self.harvest.task_id is None:
+            log.debug('harvest.task_id not found')
+            task_name = self.harvest.task_name
+            if self.harvest.task_name is None or self.harvest.task_name == '':
+                raise MissingHarvestTask()
+
+            try:
+                self.harvest.task_id = harvest_cache.get_task_id(harvest_proj, task_name)
+            except KeyError as e:
+                raise MissingHarvestTask()
+        return
+
+
+class ProjectMapping:
+    def __init__(self, mapping):
+        self.mapping = mapping
+
+    def harvest_project(self, project_code):
+        return self.mapping[project_code]['harvest_project']
+
+    def default_harvest_task(self, project_code):
+        return
+
+
+class HarvestCache:
+    def __init__(self, harvest_cache):
+        self.task_ids = {}
+        for project_id, v in harvest_cache.items():
+            self.task_ids[project_id] = {
+                name: task_id
+                for task_id, name in v['tasks'].items()
+            }
+
+    def get_task_id(self, proj_id, task_name):
+        return self.task_ids[proj_id][task_name]
