@@ -145,12 +145,23 @@ class ProjectMapping:
 
 class HarvestCache:
     def __init__(self, harvest_cache):
-        self.task_ids = {}
+        self.tasks_by_name = {}
+        self.project_tasks = {}
         for project_id, v in harvest_cache.items():
-            self.task_ids[project_id] = {
+            self.tasks_by_name[project_id] = {
                 name: task_id
                 for task_id, name in v['tasks'].items()
             }
+            self.project_tasks[project_id] = set(v['tasks'].keys())
 
     def get_task_id(self, proj_id, task_name):
-        return self.task_ids[proj_id][task_name]
+        try:
+            return self.tasks_by_name[proj_id][task_name]
+        except KeyError:
+            return None
+
+    def task_in_project(self, proj_id, task_id):
+        try:
+            return task_id in self.project_tasks[proj_id]
+        except KeyError:
+            return False
