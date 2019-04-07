@@ -8,3 +8,11 @@ class MissingHarvestProject(IncompleteHarvestData):
 
 class MissingHarvestTask(IncompleteHarvestData):
     pass
+
+
+class InvalidHarvestTask(IncompleteHarvestData):
+    pass
+
+
+class InvalidHarvestProject(IncompleteHarvestData):
+    pass

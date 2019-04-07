@@ -1,7 +1,14 @@
 # Standard Library
+import re
 import logging
 
-from .exceptions import MissingHarvestProject, MissingHarvestTask
+from .exceptions import (
+    MissingHarvestProject,
+    MissingHarvestTask,
+    InvalidHarvestTask,
+    InvalidHarvestProject,
+)
+
 
 log = logging.getLogger(__name__)
 
@@ -102,45 +109,85 @@ class TimeLog:
         self.time_entries.append(entry)
         return entry
 
-    def update_harvest_project_task(self):
-        if self.harvest.project_id is None:
-            log.debug('harvest.project_id not found')
+    def _identify_harvest_project(self, project_mapping):
+        project_id = self.harvest.project_id
+        if project_id is None and self.project_code:
+            project_id = project_mapping.harvest_project(self.project_code)
+
+        if project_id is None:
+            project_code = project_mapping.project_in_description(self.description)
+            project_id = project_mapping.harvest_project(project_code)
+
+        if project_id is None:
+            raise MissingHarvestProject()
+
+        return project_id
+
+    def _identify_harvest_task(self, project_mapping, harvest_cache):
+        harvest_proj = self.harvest.project_id
+        assert harvest_proj is not None
+
+        if self.harvest.task_id is not None:
+            return self.harvest.task_id
+
+        default_task_name = project_mapping.harvest_task_default(harvest_proj)
+        task_name = self.harvest.task_name or default_task_name
+        if task_name is None or task_name == '':
+            raise MissingHarvestTask()
+
+        try:
+            return harvest_cache.get_task_id(harvest_proj, task_name)
+        except KeyError:
+            raise MissingHarvestTask()
 
     def update_harvest_tasks(self, project_mapping, harvest_cache):
-        # Get or set harvest project
-        if self.harvest.project_id is None:
-            log.debug('harvest.project_id not found')
-            try:
-                harvest_proj = project_mapping.harvest_project(self.project_code)
-                self.harvest.project_id = harvest_proj
-            except KeyError:
-                raise MissingHarvestProject()
-        else:
-            harvest_proj = self.harvest.project_id
+        self.harvest.project_id = self._identify_harvest_project(project_mapping)
 
-        # Set harvest task
-        if self.harvest.task_id is None:
-            log.debug('harvest.task_id not found')
-            task_name = self.harvest.task_name
-            if self.harvest.task_name is None or self.harvest.task_name == '':
-                raise MissingHarvestTask()
+        if not harvest_cache.project_in_cache(self.harvest.project_id):
+            raise InvalidHarvestProject()
 
-            try:
-                self.harvest.task_id = harvest_cache.get_task_id(harvest_proj, task_name)
-            except KeyError:
-                raise MissingHarvestTask()
-        return
+        self.harvest.task_id = self._identify_harvest_task(project_mapping, harvest_cache)
+
+        if not harvest_cache.task_in_project(self.harvest.project_id, self.harvest.task_id):
+            raise InvalidHarvestTask()
 
 
 class ProjectMapping:
     def __init__(self, mapping):
         self.mapping = mapping
+        self.default_tasks = {}
+        for code, project in mapping.items():
+            try:
+                p_id = project['harvest']['project']
+                t_name = project['harvest']['default_task']
+                self.default_tasks[p_id] = t_name
+            except KeyError:
+                pass
+
+        self.project_re = re.compile(f'({"|".join(mapping.keys())})(-[0-9]+)?')
 
     def harvest_project(self, project_code):
-        return self.mapping[project_code]['harvest_project']
+        try:
+            return self.mapping[project_code]['harvest']['project']
+        except KeyError:
+            return None
 
-    def default_harvest_task(self, project_code):
-        return
+    def harvest_task_default(self, harvest_proj):
+        try:
+            return self.default_tasks[harvest_proj]
+        except KeyError:
+            return None
+
+    def project_in_description(self, description):
+        if description is None:
+            return None
+
+        # regular expression doesn't work if there are no project keys
+        if len(self.mapping) == 0:
+            return None
+
+        for match in self.project_re.finditer(description):
+            return match.groups(0)[0]
 
 
 class HarvestCache:
@@ -153,6 +200,12 @@ class HarvestCache:
                 for task_id, name in v['tasks'].items()
             }
             self.project_tasks[project_id] = set(v['tasks'].keys())
+
+    def project_in_cache(self, proj_id):
+        try:
+            return self.tasks_by_name[proj_id]
+        except KeyError:
+            return None
 
     def get_task_id(self, proj_id, task_name):
         try:
