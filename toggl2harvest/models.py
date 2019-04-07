@@ -1,6 +1,7 @@
 # Standard Library
 import logging
 
+from .exceptions import MissingHarvestProject, MissingHarvestTask
 
 log = logging.getLogger(__name__)
 
@@ -64,18 +65,6 @@ class HarvestData:
         self.task_name = task_name
         self.task_id = task_id
         self.uploaded = uploaded
-
-
-class IncompleteHarvestData(Exception):
-    pass
-
-
-class MissingHarvestProject(IncompleteHarvestData):
-    pass
-
-
-class MissingHarvestTask(IncompleteHarvestData):
-    pass
 
 
 class TimeLog:
