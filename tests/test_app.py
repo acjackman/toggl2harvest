@@ -48,6 +48,7 @@ class TestDataDir:
         instance_2 = app.data_dir
         assert instance_1 is instance_2
 
+
 class TestDataFilePath:
     @pytest.mark.parametrize('datestr,file_path', [
         ('2019-01-01', './data/2019-01-01.yml'),
@@ -137,7 +138,6 @@ class TestDownloadTogglData:
         mock_api.toggl_download_params.return_value = {'fake': 'params'}
         mock_api.retrieve_time_entries.return_value = [{'entry': 1}, {'entry': 2}]
         app.toggl_api = mock_api
-
 
         app.download_toggl_data(dt(2019, 1, 1), dt(2019, 1, 1))
 

@@ -159,17 +159,18 @@ class TestGenerateSelectedDays:
 class TestOperateOnDayData:
     @pytest.mark.parametrize('file_contents', [
         trim_multiline(entry) + '\n' for entry in [
-        """
-        a: key
-        to: test  # with comment
-        """,
-        """
-        a: key
-        to: test  # with comment
-        ---
-        another: document
-        """,
-    ]])
+            """
+            a: key
+            to: test  # with comment
+            """,
+            """
+            a: key
+            to: test  # with comment
+            ---
+            another: document
+            """,
+        ]
+    ])
     def test_operate_on_day_data(self, file_contents):
         def noop(i, data, **kwargs):
             return (data, kwargs)

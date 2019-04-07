@@ -1,7 +1,5 @@
-import pytest
-from inspect import cleandoc as trim_multiline
-
 from toggl2harvest.models import HarvestCache
+
 
 short_harvest_cache = {
     1: {

@@ -1,15 +1,17 @@
 # Standard Library
 import logging
 import time
+from pathlib import Path
 
 # Third Party Packages
+import click
 import requests
-from boltons.cacheutils import cachedproperty
 from requests.exceptions import HTTPError
 from ruamel.yaml import YAML
 
-from toggl2harvest.schemas import TogglReportEntrySchema
-from toggl2harvest.utils import iso_date, iso_timestamp
+from .models import TimeLog
+from .schemas import TogglReportEntrySchema
+from .utils import iso_date
 
 
 log = logging.getLogger(__name__)
@@ -102,7 +104,7 @@ class TogglSession():
         except KeyError:
             return {}
 
-        if not isinstance(params, dict) :
+        if not isinstance(params, dict):
             return {}
 
         return params
@@ -113,7 +115,7 @@ class TogglSession():
         report_entries.sort(key=lambda x: x.start)
 
         daily_time_entries = {}
-        for toggl_entry in toggl_time_entries:
+        for toggl_entry in report_entries:
             start_date = toggl_entry.start.date()
             while True:
                 try:

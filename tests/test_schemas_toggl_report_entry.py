@@ -1,13 +1,12 @@
 # Standard Library
 import collections
-from datetime import datetime as dt
-from datetime import timezone
 
 # Third Party Packages
 import pytest
 from marshmallow.exceptions import ValidationError
 
 from toggl2harvest import models, schemas, utils
+
 
 TogglReportData = collections.namedtuple(
     'TogglReportData',

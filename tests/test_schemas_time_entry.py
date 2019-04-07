@@ -13,11 +13,13 @@ from toggl2harvest import models, schemas
 PLUS_2 = tzoffset(None, 7200)
 MINUS_7 = tzoffset(None, -25200)
 
+
 def make_valid_time_entries(valid_tuples):
     return [
         ({'s': s, 'e': e}, models.TimeEntry(start, end))
         for s, start, e, end in valid_tuples
     ]
+
 
 class TestTimeEntrySchema:
     @pytest.fixture
@@ -56,8 +58,9 @@ class TestTimeEntrySchema:
         serialized = schema.dump(time_entry)
         assert serialized == valid_data
 
-    @pytest.mark.parametrize('valid_data,time_entry', valid_data +
-        make_valid_time_entries([
+    @pytest.mark.parametrize(
+        'valid_data,time_entry',
+        valid_data + make_valid_time_entries([
             (
                 '2019-01-01T12:00:00-0700',
                 dt(2019, 1, 1, 12, tzinfo=MINUS_7),

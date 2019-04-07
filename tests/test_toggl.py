@@ -17,6 +17,7 @@ def toggl_credentials():
         user_agent='123',
     )
 
+
 @pytest.fixture
 def toggl_session(toggl_credentials):
     return toggl.TogglSession(toggl_credentials)
@@ -25,11 +26,11 @@ def toggl_session(toggl_credentials):
 class TestDownloadParams:
     def test_toggl_download_params(self, toggl_session):
         params = toggl_session.toggl_download_params(cleandoc(
-        """
-        toggl:
-          dowload_data_params:
-            project_ids: '123'
-        """
+            """
+            toggl:
+              dowload_data_params:
+                project_ids: '123'
+            """
         ))
 
         assert params == {'project_ids': '123'}
@@ -86,7 +87,7 @@ class MockResponse:
 class TestRetrieveTimeEntries:
     def test_valid_access(self, mocker, toggl_session):
         session_mock = mocker.patch.object(toggl_session, 'session', autospec=True)
-        get_mock = mocker.patch.object(
+        mocker.patch.object(
             session_mock, 'get',
             side_effect=[MockResponse(200, d) for d in [
                 {
@@ -106,7 +107,7 @@ class TestRetrieveTimeEntries:
     def test_pages_data(self, mocker, toggl_session):
         sleep_mock = mocker.patch('time.sleep')
         session_mock = mocker.patch.object(toggl_session, 'session', autospec=True)
-        get_mock = mocker.patch.object(
+        mocker.patch.object(
             session_mock, 'get',
             side_effect=[MockResponse(200, d) for d in [
                 {
@@ -130,9 +131,9 @@ class TestRetrieveTimeEntries:
 
     def test_bad_password(self, mocker, toggl_session):
         session_mock = mocker.patch.object(toggl_session, 'session', autospec=True)
-        get_mock = mocker.patch.object(
+        mocker.patch.object(
             session_mock, 'get',
-            side_effect=HTTPError(response=MockResponse(401, "Unauthorized")))
+            side_effect=HTTPError(response=MockResponse(401, 'Unauthorized')))
 
         with pytest.raises(toggl.InvalidCredentialsError):
             toggl_session.retrieve_time_entries(

@@ -1,4 +1,6 @@
+# Standard Library
 import logging
+
 
 log = logging.getLogger(__name__)
 
@@ -122,7 +124,7 @@ class TimeLog:
             try:
                 harvest_proj = project_mapping.harvest_project(self.project_code)
                 self.harvest.project_id = harvest_proj
-            except KeyError as e:
+            except KeyError:
                 raise MissingHarvestProject()
         else:
             harvest_proj = self.harvest.project_id
@@ -136,7 +138,7 @@ class TimeLog:
 
             try:
                 self.harvest.task_id = harvest_cache.get_task_id(harvest_proj, task_name)
-            except KeyError as e:
+            except KeyError:
                 raise MissingHarvestTask()
         return
 
