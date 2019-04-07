@@ -50,13 +50,13 @@ class TestDataDir:
         assert instance_1 is instance_2
 
 
-class TestDataFilePath:
-    @pytest.mark.parametrize('datestr,file_path', [
+class TestDataFile:
+    @pytest.mark.parametrize('datestr,full_path', [
         ('2019-01-01', './data/2019-01-01.yml'),
         ('foobar', './data/foobar.yml'),
     ])
-    def test_correct_path(self, app, datestr, file_path):
-        assert app.data_file_path(datestr) == Path(file_path)
+    def test_correct_path(self, mocker, datestr, full_path, app):
+        assert app.data_file(datestr) == Path(full_path)
 
 
 class TestTogglCred:

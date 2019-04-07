@@ -5,7 +5,6 @@ from os.path import expanduser
 from pathlib import Path
 
 # Third Party Packages
-import click
 from boltons.cacheutils import cachedproperty
 from ruamel.yaml import YAML
 
@@ -30,13 +29,9 @@ class TogglHarvestApp(object):
         """Path to the credentialas file for this application."""
         return Path(self.config_dir, 'data')
 
-    def data_file_path(self, date_str):
-        """Path to a data file for this application."""
-        return Path(self.config_dir, 'data', f'{date_str}.yml')
-
     def data_file(self, file_path, atomic=True):
         """Data file for this application."""
-        return click.open_file(self.config_dir, file_path, atomic=atomic)
+        return Path(self.config_dir, 'data', file_path + '.yml')
 
     @cachedproperty
     def toggl_cred(self):
