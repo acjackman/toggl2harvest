@@ -1,12 +1,15 @@
 # Standard Library
 import logging
+import os
 from os.path import expanduser
 from pathlib import Path
 
 # Third Party Packages
+import click
 from boltons.cacheutils import cachedproperty
+from ruamel.yaml import YAML
 
-from toggl2harvest import harvest, toggl
+from . import harvest, toggl
 
 
 log = logging.getLogger(__name__)
@@ -31,6 +34,10 @@ class TogglHarvestApp(object):
         """Path to a data file for this application."""
         return Path(self.config_dir, 'data', f'{date_str}.yml')
 
+    def data_file(self, file_path, atomic=True):
+        """Data file for this application."""
+        return click.open_file(self.config_dir, file_path, atomic=atomic)
+
     @cachedproperty
     def toggl_cred(self):
         return toggl.TogglCredentials.read_from_file(self.cred_file)
@@ -46,6 +53,15 @@ class TogglHarvestApp(object):
     @cachedproperty
     def harvest_api(self):
         return harvest.HarvestSession(self.harvest_cred)
+
+    @cachedproperty
+    def project_file(self):
+        return Path(os.path.join(self.config_dir, 'project_mapping.yml'))
+
+    @cachedproperty
+    def project_mapping(self):
+        with YAML() as yaml:
+            return yaml.load(self.project_file)
 
     def cache_harvest_projects(self):
         self.harvest_api.update_project_cache(self.config_dir)

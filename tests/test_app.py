@@ -1,5 +1,6 @@
 # Standard Library
 from datetime import datetime as dt
+from inspect import cleandoc as trim_multiline
 from pathlib import Path
 
 # Third Party Packages
@@ -116,6 +117,32 @@ class TestHarvestAPI:
         app.harvest_api
 
         mock.assert_called_with(mock_cred)
+
+
+class TestProjectFile:
+    @pytest.mark.parametrize('config_dir', [
+        '2019-01-01',
+        'foobar',
+    ])
+    def test_project_file(self, mocker, app, config_dir):
+        app.config_dir = config_dir
+        assert app.project_file == Path(config_dir, 'project_mapping.yml')
+
+
+class TestProjectMapping:
+    def test_project_mapping(self, mocker, app):
+        app.project_file = trim_multiline("""
+        PROJ:
+            harvest_project: 123
+            default_task: Task Name
+        """)
+
+        assert app.project_mapping == {
+            'PROJ': {
+                'harvest_project': 123,
+                'default_task': 'Task Name',
+            }
+        }
 
 
 class TestCacheHarvestProjects:
