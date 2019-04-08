@@ -1,7 +1,8 @@
+# Third Party Packages
 import pytest
 
-from toggl2harvest.exceptions import InvalidHarvestTask, InvalidHarvestProject
-from toggl2harvest.models import TimeLog, ProjectMapping, HarvestCache, HarvestData
+from toggl2harvest.exceptions import InvalidHarvestProject, InvalidHarvestTask
+from toggl2harvest.models import HarvestCache, HarvestData, ProjectMapping, TimeLog
 
 
 class TestUpdateHarvestTasks:

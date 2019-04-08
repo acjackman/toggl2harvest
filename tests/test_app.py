@@ -9,12 +9,12 @@ import pytest
 
 from toggl2harvest.app import TogglHarvestApp
 from toggl2harvest.exceptions import (
+    InvalidHarvestProject,
+    InvalidHarvestTask,
     MissingHarvestProject,
     MissingHarvestTask,
-    InvalidHarvestTask,
-    InvalidHarvestProject,
 )
-from toggl2harvest.models import ProjectMapping, HarvestCache
+from toggl2harvest.models import HarvestCache, ProjectMapping
 
 
 @pytest.fixture

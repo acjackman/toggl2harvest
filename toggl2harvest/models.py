@@ -1,13 +1,8 @@
 # Standard Library
-import re
 import logging
+import re
 
-from .exceptions import (
-    MissingHarvestProject,
-    MissingHarvestTask,
-    InvalidHarvestTask,
-    InvalidHarvestProject,
-)
+from .exceptions import InvalidHarvestProject, InvalidHarvestTask, MissingHarvestProject, MissingHarvestTask
 
 
 log = logging.getLogger(__name__)
