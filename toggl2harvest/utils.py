@@ -63,7 +63,7 @@ def generate_selected_days(start, end):
     selected_days = [start]
     while selected_days[-1].date() < end.date():
         selected_days.append(selected_days[-1] + timedelta(hours=24))
-    selected_days = [d.strftime('%Y-%m-%d') for d in selected_days]
+    selected_days = [f'{d:%Y-%m-%d}' for d in selected_days]
     return selected_days
 
 

@@ -7,9 +7,22 @@ import click
 from dateutil.parser import parse as parse_date
 
 from toggl2harvest.app import TogglHarvestApp
+from toggl2harvest.utils import generate_selected_days
 
 
 log = logging.getLogger(__name__)
+
+
+def parse_start_end(start, end):
+    try:
+        start_date = parse_date(start)
+    except ValueError:
+        raise click.ClickException(f'"{start}" is not a valid start date')
+    try:
+        end_date = parse_date(end)
+    except ValueError:
+        raise click.ClickException(f'"{end}" is not a valid end date')
+    return start_date, end_date
 
 
 @click.group()
@@ -38,12 +51,30 @@ def harvest_cache(app):
 @click.option('--end', default=lambda: f'{datetime.today():%Y-%m-%d}')
 @click.pass_obj
 def download_toggl_data(app, start, end):
-    try:
-        start_date = parse_date(start)
-    except ValueError:
-        raise click.ClickException(f'"{start}" is not a valid start date')
-    try:
-        end_date = parse_date(end)
-    except ValueError:
-        raise click.ClickException(f'"{end}" is not a valid end date')
+    start_date, end_date = parse_start_end(start, end)
     app.download_toggl_data(start_date, end_date)
+
+
+@cli.command()
+@click.option('--start', default=lambda: f'{datetime.today():%Y-%m-%d}')
+@click.option('--end', default=lambda: f'{datetime.today():%Y-%m-%d}')
+@click.pass_obj
+def validate_time_logs(app, start, end):
+    start_date, end_date = parse_start_end(start, end)
+    selected_days = generate_selected_days(start_date, end_date)
+
+    _validate_time_logs(app, selected_days)
+
+
+def _validate_time_logs(app, selected_days):
+    for day in selected_days:
+        day_file = app.data_file(day)
+
+        # Run though and check file, re-edit until it's valid
+        file_valid = False
+        while not file_valid:
+            file_errors = app.validate_file(day_file)
+            print(f'File Errors: {file_errors}')
+            file_valid = file_errors == 0
+            if not file_valid and click.confirm(f'{day} is invalid. Edit file?'):
+                click.edit(filename=day_file)
