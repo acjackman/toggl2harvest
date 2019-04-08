@@ -16,3 +16,11 @@ class InvalidHarvestTask(IncompleteHarvestData):
 
 class InvalidHarvestProject(IncompleteHarvestData):
     pass
+
+
+class InvalidFileError(Exception):
+    pass
+
+
+class DifferentEntryError(Exception):
+    pass

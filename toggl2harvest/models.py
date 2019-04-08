@@ -1,8 +1,16 @@
 # Standard Library
 import logging
 import re
+from datetime import timedelta
 
-from .exceptions import InvalidHarvestProject, InvalidHarvestTask, MissingHarvestProject, MissingHarvestTask
+from .exceptions import (
+    DifferentEntryError,
+    InvalidHarvestProject,
+    InvalidHarvestTask,
+    MissingHarvestProject,
+    MissingHarvestTask,
+)
+from .utils import delta_hours
 
 
 log = logging.getLogger(__name__)
@@ -45,11 +53,12 @@ class TogglReportEntry:
 
 
 class TogglData:
-    def __init__(self, client=None, project=None, task=None, is_billable=None):
+    def __init__(self, client=None, project=None, task=None, is_billable=None, description=None):
         self.client = client
         self.project = project
         self.task = task
         self.is_billable = is_billable
+        self.description = description
 
     def unique_key(self):
         return (
@@ -81,6 +90,14 @@ class TimeLog:
         self.toggl = toggl or TogglData()
         self.harvest = harvest or HarvestData()
 
+    @property
+    def total_time(self):
+        total_time = timedelta()
+        for entry in self.time_entries:
+            assert entry.start < entry.end
+            total_time += entry.end - entry.start
+        return total_time
+
     @classmethod
     def build_from_toggl_entry(cls, report_entry):
         return TimeLog(
@@ -99,7 +116,9 @@ class TimeLog:
         )
 
     def add_to_time_entries(self, report_entry):
-        assert report_entry.unique_key() == self.toggl.unique_key()
+        if report_entry.unique_key() != self.toggl.unique_key():
+            raise DifferentEntryError()
+
         entry = TimeEntry.build_from_toggl_entry(report_entry)
         self.time_entries.append(entry)
         return entry
@@ -213,3 +232,22 @@ class HarvestCache:
             return task_id in self.project_tasks[proj_id]
         except KeyError:
             return False
+
+
+class HarvestEntry:
+    def __init__(self, project_id, task_id, spent_date, hours, notes):
+        self.project_id = project_id
+        self.task_id = task_id
+        self.spent_date = spent_date
+        self.hours = hours
+        self.notes = notes
+
+    @classmethod
+    def from_time_log(cls, date, time_log):
+        return HarvestEntry(
+            project_id=time_log.harvest.project_id,
+            task_id=time_log.harvest.task_id,
+            spent_date=date,
+            hours=delta_hours(time_log.total_time),
+            notes=time_log.description,
+        )

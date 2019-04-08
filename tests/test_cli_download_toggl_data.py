@@ -1,7 +1,7 @@
-# Third Party Packages
 # Standard Library
 from datetime import datetime
 
+# Third Party Packages
 import pytest
 
 from toggl2harvest.scripts.toggl2harvest import cli

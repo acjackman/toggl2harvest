@@ -9,8 +9,9 @@ import requests
 from requests.exceptions import HTTPError
 from ruamel.yaml import YAML
 
+from .exceptions import DifferentEntryError
 from .models import TimeLog
-from .schemas import TogglReportEntrySchema
+from .schemas import TimeLogSchema, TogglReportEntrySchema
 from .utils import iso_date
 
 
@@ -134,12 +135,13 @@ class TogglSession():
             try:
                 log = days_unqiue_map[toggl_key]
                 log.add_to_time_entries(toggl_entry)
-            except KeyError:
+            except (KeyError, DifferentEntryError):
                 log = TimeLog.build_from_toggl_entry(toggl_entry)
                 days_unqiue_map[toggl_key] = log
                 days_entries.append(log)
 
         # Write out raw yaml for the dates
+        schema = TimeLogSchema()
         for day, day_entries in daily_time_entries.items():
             day_file = Path(data_dir, f'{day:%Y-%m-%d}.yml')
             # TODO: Check that date hasn't been opened before
@@ -149,4 +151,4 @@ class TogglSession():
 
             with YAML(output=day_file) as yaml:
                 for entry in day_entries['entries']:
-                    yaml.dump(entry)
+                    yaml.dump(schema.dump(entry))

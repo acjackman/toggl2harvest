@@ -50,6 +50,7 @@ def calc_total_time(time_entries):
         end = strp_iso8601(entry['e'])
         # TODO if start > end
         total_time += end - start
+
     return total_time
 
 

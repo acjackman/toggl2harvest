@@ -1,25 +1,27 @@
 # Standard Library
-import io
 import logging
 import os
+from datetime import datetime
 from os.path import expanduser
 from pathlib import Path
 
 # Third Party Packages
-import click
 from boltons.cacheutils import cachedproperty
 from marshmallow.exceptions import ValidationError as MarshmallowValidationError
+from requests.exceptions import HTTPError
 from ruamel.yaml import YAML
 
 from . import harvest, schemas, toggl
 from .exceptions import (
     IncompleteHarvestData,
+    InvalidFileError,
     InvalidHarvestProject,
     InvalidHarvestTask,
     MissingHarvestProject,
     MissingHarvestTask,
 )
-from .utils import AtomicFileUpdate
+from .models import HarvestCache, HarvestEntry, ProjectMapping
+from .utils import AtomicFileUpdate, iso_timestamp
 
 
 log = logging.getLogger(__name__)
@@ -61,13 +63,22 @@ class TogglHarvestApp(object):
         return harvest.HarvestSession(self.harvest_cred)
 
     @cachedproperty
+    def _harvest_cache_file(self):
+        return Path(os.path.join(self.config_dir, 'harvest_cache.yml'))
+
+    @cachedproperty
+    def harvest_cache(self):
+        with YAML() as yaml:
+            return HarvestCache(yaml.load(self._harvest_cache_file))
+
+    @cachedproperty
     def project_file(self):
         return Path(os.path.join(self.config_dir, 'project_mapping.yml'))
 
     @cachedproperty
     def project_mapping(self):
         with YAML() as yaml:
-            return yaml.load(self.project_file)
+            return ProjectMapping(yaml.load(self.project_file))
 
     @cachedproperty
     def time_log_schema(self):
@@ -95,7 +106,6 @@ class TogglHarvestApp(object):
                 for i, data in enumerate(yaml.load_all(file.input)):
                     time_log = self.time_log_schema.load(data)
                     updated_data, valid, = self._update_entry(i, data, time_log)
-                    log.debug(valid)
                     file_errors += not valid
                     yaml.dump(updated_data)
                 file.commit()
@@ -124,3 +134,43 @@ class TogglHarvestApp(object):
             valid = False
 
         return data, valid
+
+    def upload_to_harvest(self, day):
+        day_file = self.data_file(day)
+
+        if not day_file.is_file():
+            return []
+
+        results = []
+        with AtomicFileUpdate(day_file) as file, YAML(output=file.output) as yaml:
+            try:
+                for i, data in enumerate(yaml.load_all(file.input)):
+                    time_log = self.time_log_schema.load(data)
+                    data, valid, = self._update_entry(i, data, time_log)
+                    if valid:
+                        data, message = self._upload_entry_to_harvest(day, data, time_log)
+                        results.append(message)
+                    else:
+                        results.append('Entry invalid, skipping')
+                    yaml.dump(data)
+                file.commit()
+            except MarshmallowValidationError:
+                raise InvalidFileError(f'{i:02d} entry is not parseable, skipping this file')
+
+        return results
+
+    def _upload_entry_to_harvest(self, day, data, time_log):
+        if not time_log.is_billable:
+            return data, 'Not billable, skipping.'
+
+        if time_log.harvest.uploaded is not None:
+            return data, 'Already uploaded, skipping.'
+
+        entry = HarvestEntry.from_time_log(day, time_log)
+        try:
+            self.harvest_api.create_time_entry(entry)
+            data['harvest']['uploaded'] = iso_timestamp(datetime.now())
+        except HTTPError:
+            return data, 'Error uploading to Harvest, skipping.'
+
+        return data, 'Uploaded'

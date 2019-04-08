@@ -1,5 +1,5 @@
 # Third Party Packages
-from marshmallow import Schema, fields, post_load
+from marshmallow import EXCLUDE, Schema, fields, post_load
 
 from . import models
 
@@ -25,14 +25,16 @@ class TogglDataSchema(Schema):
 
 
 class TogglReportEntrySchema(Schema):
-    client = fields.Str()
+    class Meta:
+        unknown = EXCLUDE
+    client = fields.Str(required=False, allow_none=True)
     project = fields.Str()
-    task = fields.Str()
-    description = fields.Str()
+    task = fields.Str(required=False, allow_none=True)
+    description = fields.Str(required=False, allow_none=True)
     is_billable = fields.Boolean()
     start = fields.LocalDateTime()
     end = fields.LocalDateTime()
-    tags = fields.List(fields.Str())
+    tags = fields.List(fields.Str(), required=False, allow_none=True)
 
     @post_load
     def make_toggl_report_entry(self, data):

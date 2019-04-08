@@ -101,20 +101,20 @@ class HarvestSession():
             next_url = time_entries_r['links']['next']
         return time_entries
 
-    def create_time_entry(self, project_id, task_id, spent_date, hours, notes):
+    def create_time_entry(self, entry):
         r = self.session.post(
             f'{HARVEST_API}/time_entries',
             json={
-                'project_id': project_id,
-                'task_id': task_id,
-                'spent_date': spent_date,
-                'hours': hours,
-                'notes': notes,
+                'project_id': entry.project_id,
+                'task_id': entry.task_id,
+                'spent_date': entry.spent_date,
+                'hours': entry.hours,
+                'notes': entry.notes,
             }
         )
         try:
             r.raise_for_status()
         except requests.exceptions.HTTPError:
-            print(r.request.body)
+            log.info(r.request.body)
             raise
         return r.json()

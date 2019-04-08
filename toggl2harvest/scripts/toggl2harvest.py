@@ -7,6 +7,7 @@ import click
 from dateutil.parser import parse as parse_date
 
 from toggl2harvest.app import TogglHarvestApp
+from toggl2harvest.exceptions import InvalidFileError
 from toggl2harvest.utils import generate_selected_days
 
 
@@ -47,8 +48,8 @@ def harvest_cache(app):
 
 
 @cli.command()
-@click.option('--start', default=lambda: f'{datetime.today():%Y-%m-%d}')
-@click.option('--end', default=lambda: f'{datetime.today():%Y-%m-%d}')
+@click.option('--start', default=f'{datetime.today():%Y-%m-%d}')
+@click.option('--end', default=f'{datetime.today():%Y-%m-%d}')
 @click.pass_obj
 def download_toggl_data(app, start, end):
     start_date, end_date = parse_start_end(start, end)
@@ -56,8 +57,8 @@ def download_toggl_data(app, start, end):
 
 
 @cli.command()
-@click.option('--start', default=lambda: f'{datetime.today():%Y-%m-%d}')
-@click.option('--end', default=lambda: f'{datetime.today():%Y-%m-%d}')
+@click.option('--start', default=f'{datetime.today():%Y-%m-%d}')
+@click.option('--end', default=f'{datetime.today():%Y-%m-%d}')
 @click.pass_obj
 def validate_time_logs(app, start, end):
     start_date, end_date = parse_start_end(start, end)
@@ -78,3 +79,37 @@ def _validate_time_logs(app, selected_days):
             file_valid = file_errors == 0
             if not file_valid and click.confirm(f'{day} is invalid. Edit file?'):
                 click.edit(filename=day_file)
+
+
+@cli.command()
+@click.option('--start', default=f'{datetime.today():%Y-%m-%d}')
+@click.option('--end', default=f'{datetime.today():%Y-%m-%d}')
+@click.pass_obj
+def upload_to_harvest(app, start, end):
+    start_date, end_date = parse_start_end(start, end)
+    selected_days = generate_selected_days(start_date, end_date)
+
+    _upload_to_harvest(app, selected_days)
+
+
+def _upload_to_harvest(app, selected_days):
+    for day in selected_days:
+        try:
+            messages = app.upload_to_harvest(day)
+            for i, message in enumerate(messages):
+                click.echo(f'{day}#{i:02d}: {message}')
+        except InvalidFileError as e:
+            click.echo(f'{day}#{e.message}')
+
+
+@cli.command()
+@click.option('--start', default=f'{datetime.today():%Y-%m-%d}')
+@click.option('--end', default=f'{datetime.today():%Y-%m-%d}')
+@click.pass_obj
+def timesheet(app, start, end):
+    start_date, end_date = parse_start_end(start, end)
+    selected_days = generate_selected_days(start_date, end_date)
+
+    app.download_toggl_data(start_date, end_date)
+    _validate_time_logs(app, selected_days)
+    _upload_to_harvest(app, selected_days)

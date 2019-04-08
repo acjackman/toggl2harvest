@@ -1,9 +1,11 @@
-# Third Party Packages
-import pytest
+# Standard Library
 from datetime import datetime
 
+# Third Party Packages
+import pytest
+
 from toggl2harvest.app import TogglHarvestApp
-from toggl2harvest.scripts.toggl2harvest import cli, _validate_time_logs
+from toggl2harvest.scripts.toggl2harvest import _validate_time_logs, cli
 
 
 @pytest.fixture
