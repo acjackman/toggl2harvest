@@ -1,4 +1,5 @@
 # Standard Library
+import os
 from datetime import datetime as dt
 from inspect import cleandoc as trim_multiline
 from pathlib import Path
@@ -7,6 +8,13 @@ from pathlib import Path
 import pytest
 
 from toggl2harvest.app import TogglHarvestApp
+from toggl2harvest.exceptions import (
+    MissingHarvestProject,
+    MissingHarvestTask,
+    InvalidHarvestTask,
+    InvalidHarvestProject,
+)
+from toggl2harvest.models import ProjectMapping, HarvestCache
 
 
 @pytest.fixture
@@ -178,3 +186,159 @@ class TestDownloadTogglData:
             [{'entry': 1}, {'entry': 2}],
             mock_data_dir,
         )
+
+
+class TestValidateFile:
+    @pytest.fixture
+    def app(credentials_file, tmpdir):
+        app = TogglHarvestApp()
+        app.config_dir = tmpdir
+        os.mkdir(Path(tmpdir, 'data'))
+
+        app.project_mapping = ProjectMapping({
+            'TEST': {
+                'project': 123,
+                'default_task': 'Development'
+            },
+        })
+        app.harvest_cache = HarvestCache({
+            123: {
+                'name': 'Test Project',
+                'client': {
+                    'id': 5000,
+                    'name': 'Test Client',
+                },
+                'tasks': {
+                    5: 'Development',
+                    6: 'Project Management',
+                    7: 'Design',
+                }
+            },
+        })
+        return app
+
+    def test_missing_file(self, app):
+        errors = app.validate_file(app.data_file('2019-01-01'))
+
+        assert errors == 0
+
+    def test_empty_file(self, app):
+        test_file = app.data_file('2019-01-01')
+        with open(test_file, 'w') as f:
+            f.write('')
+
+        errors = app.validate_file(test_file)
+
+        assert errors == 0
+
+    @pytest.mark.parametrize('contents', [c + '\n' for c in [
+        # Single Entry
+        trim_multiline(
+            """
+            project_code:
+            description:
+            is_billable: true
+            time_entries:
+            harvest:
+              project_id: 123
+              task_id: 5  # Comment
+            """
+        ),
+        # Multiple Entries
+        trim_multiline(
+            """
+            project_code:
+            description:
+            is_billable: true
+            time_entries:
+            harvest:
+              project_id: 123
+              task_id: 5  # Comment
+            ---
+            project_code:
+            description:
+            is_billable: true
+            time_entries:
+            harvest:
+              project_id: 123
+              task_id: 5  # Comment
+            """
+        )
+    ]])
+    def test_valid_entries_are_unmodified(self, app, contents):
+        test_file = app.data_file('2019-01-01')
+
+        with open(test_file, 'w') as f:
+            f.write(contents)
+
+        errors = app.validate_file(test_file)
+
+        assert errors == 0
+
+        with open(test_file, 'r') as f:
+            file_contents = f.read()
+
+        assert file_contents == contents
+
+    @pytest.mark.parametrize('contents', [c + '\n' for c in [
+        # Single Entry
+        trim_multiline(
+            """
+            garbage file
+            """
+        ),
+        # Multiple Entries
+        trim_multiline(
+            """
+            project_code:
+            description:
+            is_billable: true
+            time_entries:
+            harvest:
+              project_id: 123
+              task_id: 5  # Comment
+            ---
+            garbage entry
+            """
+        )
+    ]])
+    def test_files_with_invalid_entries_are_unmodified(self, app, contents):
+        test_file = app.data_file('2019-01-01')
+
+        with open(test_file, 'w') as f:
+            f.write(contents)
+
+        errors = app.validate_file(test_file)
+
+        assert errors == 1
+
+        with open(test_file, 'r') as f:
+            file_contents = f.read()
+
+        assert file_contents == contents
+
+
+class TestUpdateEntryErrors:
+    @pytest.fixture
+    def app(self, app, mocker):
+        app.project_mapping = mocker.PropertyMock()
+        app.harvest_cache = mocker.PropertyMock()
+        return app
+
+    @pytest.mark.parametrize('error', [
+        MissingHarvestProject,
+        MissingHarvestTask,
+        InvalidHarvestTask,
+        InvalidHarvestProject,
+    ])
+    def test_update_entry(self, mocker, app, error):
+        tl_mock = mocker.MagicMock()
+        data_mock = mocker.MagicMock()
+        uht_mock = mocker.patch.object(tl_mock, 'update_harvest_tasks')
+        uht_mock.side_effect = error
+
+        data, valid = app._update_entry(3, data_mock, tl_mock)
+
+        uht_mock.assert_called_with(app.project_mapping, app.harvest_cache)
+        assert data == data_mock
+        assert valid is False

@@ -1,6 +1,8 @@
 # Standard Library
+import os
 import logging
 from datetime import datetime, timedelta
+from pathlib import Path
 
 # Third Party Packages
 from dateutil import parser as dateutil_parser
@@ -66,8 +68,42 @@ def generate_selected_days(start, end):
 
 
 def operate_on_day_data(input, output, operate, **kwargs):
+    ctx = {}
     with YAML(output=output) as yaml:
         for i, data in enumerate(yaml.load_all(input)):
-            data, ctx = operate(i, data, **kwargs)
-            yaml.dump(data)
+            updated_data, ctx = operate(i, data, **kwargs)
+            yaml.dump(updated_data)
     return ctx
+
+
+class AtomicFileUpdate():
+
+    def __init__(self, filename):
+        self.filename = filename
+        self._commit = False
+
+    def __enter__(self):
+        self.input = open(self.filename, 'r')
+        if isinstance(self.filename, Path):
+            self.tmp_filename = Path(
+                self.filename.parent,
+                self.filename.name + '.tmp')
+        else:
+            self.tmp_filename = self.filename + '.tmp'
+        self.output = open(self.tmp_filename, 'w')
+        return self
+
+    def __exit__(self, *args):
+        self.input.close()
+
+        self.output.flush()
+        os.fsync(self.output.fileno())
+        self.output.close()
+
+        if self._commit:
+            os.rename(self.tmp_filename, self.filename)
+        else:
+            os.remove(self.tmp_filename)
+
+    def commit(self):
+        self._commit = True
