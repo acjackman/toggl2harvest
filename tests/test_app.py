@@ -145,12 +145,7 @@ class TestProjectMapping:
             default_task: Task Name
         """)
 
-        assert app.project_mapping == {
-            'PROJ': {
-                'harvest_project': 123,
-                'default_task': 'Task Name',
-            }
-        }
+        assert isinstance(app.project_mapping, ProjectMapping)
 
 
 class TestCacheHarvestProjects:
