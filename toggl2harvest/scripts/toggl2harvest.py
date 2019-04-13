@@ -113,4 +113,6 @@ def timesheet(app, start, end):
 
     app.download_toggl_data(start_date, end_date)
     _validate_time_logs(app, selected_days)
-    _upload_to_harvest(app, selected_days)
+
+    if click.confirm(f'Upload data for {start} though {end} to Harvest?'):
+        _upload_to_harvest(app, selected_days)
