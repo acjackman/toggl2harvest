@@ -29,24 +29,26 @@ class TestUpdateHarvestTasks:
 
     @pytest.fixture
     def harvest_cache(self):
-        return HarvestCache({
-            123: {
+        return HarvestCache([
+            {
+                'id': 123,
                 'name': 'Test project',
                 'tasks': {
-                    15: 'Development',
-                    16: 'Task 6',
-                    17: 'Task 7',
+                    15: {'name': 'Development'},
+                    16: {'name': 'Task 6'},
+                    17: {'name': 'Task 7'},
                 },
             },
-            987: {
+            {
+                'id': 987,
                 'name': 'Other Project',
                 'tasks': {
-                    95: 'Development',
-                    96: 'Task 6',
-                    97: 'Task 7',
+                    95: {'name': 'Development'},
+                    96: {'name': 'Task 6'},
+                    97: {'name': 'Task 7'},
                 },
             },
-        })
+        ])
 
     def test_does_nothing_if_already_set(self, project_mapping, harvest_cache):
         time_log = TimeLog(

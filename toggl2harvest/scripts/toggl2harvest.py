@@ -75,9 +75,10 @@ def _validate_time_logs(app, selected_days):
         file_valid = False
         while not file_valid:
             file_errors = app.validate_file(day_file)
-            print(f'File Errors: {file_errors}')
             file_valid = file_errors == 0
-            if not file_valid and click.confirm(f'{day} is invalid. Edit file?'):
+            message = 'Is valid.' if file_valid else f'Has {file_errors} invalid entries.'
+            click.echo(f'{day} | {message}', nl=file_valid)
+            if not file_valid and click.confirm(' Edit file?'):
                 click.edit(filename=day_file)
 
 

@@ -152,10 +152,30 @@ class TestCacheHarvestProjects:
     def test_calls_correct_function(self, mocker, app):
         mock_api = mocker.PropertyMock()
         app.harvest_api = mock_api
+        mock_api.cache_projects_via_api.return_value == [
+            {
+                'id': 123,
+                'name': 'Test project',
+                'tasks': {
+                    15: {'name': 'Development'},
+                    16: {'name': 'Task 6'},
+                    17: {'name': 'Task 7'},
+                },
+            },
+            {
+                'id': 987,
+                'name': 'Other Project',
+                'tasks': {
+                    95: {'name': 'Development'},
+                    96: {'name': 'Task 6'},
+                    97: {'name': 'Task 7'},
+                },
+            },
+        ]
 
         app.cache_harvest_projects()
 
-        mock_api.update_project_cache.assert_called_with(app.config_dir)
+        mock_api.cache_projects_via_api.assert_called_with()
 
 
 class TestDownloadTogglData:
@@ -196,20 +216,21 @@ class TestValidateFile:
                 'default_task': 'Development'
             },
         })
-        app.harvest_cache = HarvestCache({
-            123: {
+        app.harvest_cache = HarvestCache([
+            {
+                'id': 123,
                 'name': 'Test Project',
                 'client': {
                     'id': 5000,
                     'name': 'Test Client',
                 },
                 'tasks': {
-                    5: 'Development',
-                    6: 'Project Management',
-                    7: 'Design',
+                    5: {'name': 'Development'},
+                    6: {'name': 'Project Management'},
+                    7: {'name': 'Design'},
                 }
             },
-        })
+        ])
         return app
 
     def test_missing_file(self, app):

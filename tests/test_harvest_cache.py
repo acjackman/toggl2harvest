@@ -4,45 +4,48 @@ import pytest
 from toggl2harvest.models import HarvestCache
 
 
-short_harvest_cache = {
-    1: {
+short_harvest_cache = [
+    {
+        'id': 1,
         'name': 'Awesome project',
         'client': {
             'id': 5,
             'name': 'Amazing Client',
         },
         'tasks': {
-            7: 'Project Management',
-            8: 'Development',
-            9: 'Design',
+            7: {'name': 'Project Management'},
+            8: {'name': 'Development'},
+            9: {'name': 'Design'},
         }
     },
-}
-mid_harvest_cache = {
-    1: {
+]
+mid_harvest_cache = [
+    {
+        'id': 1,
         'name': 'Awesome project',
         'client': {
             'id': 5,
             'name': 'Amazing Client',
         },
         'tasks': {
-            7: 'Project Management',
-            8: 'Development',
-            9: 'Design',
+            7: {'name': 'Project Management'},
+            8: {'name': 'Development'},
+            9: {'name': 'Design'},
         }
     },
-    2: {
+    {
+        'id': 2,
         'name': 'Awesome project',
         'client': {
             'id': 5,
             'name': 'Amazing Client',
         },
         'tasks': {
-            70: 'Project Management',
-            80: 'Development',
+            70: {'name': 'Project Management'},
+            80: {'name': 'Development'},
         }
     },
-}
+]
 
 
 class TestHarvestCache:
@@ -65,20 +68,7 @@ class TestHarvestCache:
 class TestGetTaskId:
     @pytest.fixture
     def cache(self):
-        return HarvestCache({
-            1: {
-                'name': 'Awesome project',
-                'client': {
-                    'id': 5,
-                    'name': 'Amazing Client',
-                },
-                'tasks': {
-                    7: 'Project Management',
-                    8: 'Development',
-                    9: 'Design',
-                }
-            },
-        })
+        return HarvestCache(short_harvest_cache)
 
     def test_get_task_id(self, cache):
         task_id = cache.get_task_id(1, 'Project Management')
@@ -99,20 +89,7 @@ class TestGetTaskId:
 class TestTaskInProject:
     @pytest.fixture
     def cache(self):
-        return HarvestCache({
-            1: {
-                'name': 'Awesome project',
-                'client': {
-                    'id': 5,
-                    'name': 'Amazing Client',
-                },
-                'tasks': {
-                    7: 'Project Management',
-                    8: 'Development',
-                    9: 'Design',
-                }
-            },
-        })
+        return HarvestCache(short_harvest_cache)
 
     def test_task_in_project(self, cache):
         return cache.task_in_project(1, 7) is True

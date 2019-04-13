@@ -1,7 +1,5 @@
 # Standard Library
 import logging
-from os import path
-from pathlib import Path
 
 # Third Party Packages
 import requests
@@ -46,60 +44,55 @@ class HarvestSession():
             'User-Agent': credentials.user_agent,
         }
 
-    @classmethod
-    def _cache_file(cls, working_dir):
-        return Path(path.join(working_dir, 'harvest_cache.yml'))
+    def cache_projects_via_api(self):
+        projects = self.retrieve_projects()
+        task_assignments = self.retrieve_task_assignments()
 
-    def clear_project_cache(self, working_dir):
-        with open(self._cache_file(working_dir), 'w') as f:
-            f.write('')
+        harvest_cache = {}
+        for project in projects:
+            p_id = project['id']
+            c_id = project['client']['id']
+            harvest_cache[p_id] = {
+                'id': p_id,
+                'name': project['name'],
+                'active': project['is_active'],
+                'client': {
+                    'id': c_id,
+                    'name': project['client']['name']
+                },
+                'code': project['code'],
+                'tasks': {},
+            }
 
-    @classmethod
-    def read_project_cache(cls, working_dir):
-        with YAML() as yaml:
-            return yaml.load(cls._cache_file(working_dir))
+        for task in task_assignments:
+            project_tasks = harvest_cache[task['project']['id']]['tasks']
+            task_id = task['task']['id']
+            project_tasks[task_id] = {
+                'name': task['task']['name'],
+                'link_active': task['is_active'],
+            }
 
-    def write_project_cache(self, harvest_projects, working_dir):
-        with YAML(output=self._cache_file(working_dir)) as yaml:
-            yaml.dump(harvest_projects)
+        cache_array = sorted(
+            harvest_cache.values(),
+            key=lambda e: (not e['active'], e['name']))
+        return cache_array
 
-    def update_project_cache(self, working_dir):
-        harvest_projects = self.read_project_cache()
-        self.identify_projects_from_timeline(
-            harvest_projects=harvest_projects
-        )
-        self.write_project_cache(harvest_projects)
-        return harvest_projects
+    def retrieve_projects(self):
+        return self._retrieve_list('projects')
 
-    def identify_projects_from_timeline(self, harvest_projects={}):
-        time_entries = self.retrieve_time_entries()
+    def retrieve_task_assignments(self):
+        return self._retrieve_list('task_assignments')
 
-        for te in time_entries:
-            project_id = te['project']['id']
-            try:
-                project = harvest_projects[project_id]
-            except KeyError:
-                harvest_projects[project_id] = {
-                    'tasks': {},
-                    'name': te['project']['name']
-                }
-                project = harvest_projects[project_id]
-
-            task_id = te['task']['id']
-            project['tasks'][task_id] = te['task']['name']
-
-        return harvest_projects
-
-    def retrieve_time_entries(self):
-        time_entries = []
-        next_url = f'{HARVEST_API}/time_entries'
+    def _retrieve_list(self, list_name):
+        objects = []
+        next_url = f'{HARVEST_API}/{list_name}'
         while next_url is not None:
             r = self.session.get(next_url)
             r.raise_for_status()
-            time_entries_r = r.json()
-            time_entries = time_entries + time_entries_r['time_entries']
-            next_url = time_entries_r['links']['next']
-        return time_entries
+            r_json = r.json()
+            objects = objects + r_json[list_name]
+            next_url = r_json['links']['next']
+        return objects
 
     def create_time_entry(self, entry):
         r = self.session.post(

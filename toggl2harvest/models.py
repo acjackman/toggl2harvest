@@ -208,10 +208,11 @@ class HarvestCache:
     def __init__(self, harvest_cache):
         self.tasks_by_name = {}
         self.project_tasks = {}
-        for project_id, v in harvest_cache.items():
+        for v in harvest_cache:
+            project_id = v['id']
             self.tasks_by_name[project_id] = {
-                name: task_id
-                for task_id, name in v['tasks'].items()
+                task['name']: task_id
+                for task_id, task in v['tasks'].items()
             }
             self.project_tasks[project_id] = set(v['tasks'].keys())
 

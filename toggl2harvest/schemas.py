@@ -63,3 +63,24 @@ class TimeLogSchema(Schema):
     @post_load
     def make_time_log(self, data):
         return models.TimeLog(**data)
+
+
+class HarvestCacheTaskSchema(Schema):
+    name = fields.Str(required=True)
+    link_active = fields.Boolean(required=False, allow_none=True)
+
+
+class HarvestCacheClientSchema(Schema):
+    id = fields.Integer()
+    name = fields.Str()
+
+
+class HarvestCacheEntrySchema(Schema):
+    id = fields.Integer()
+    name = fields.Str()
+    active = fields.Boolean()
+    client = fields.Nested(HarvestCacheClientSchema)
+    code = fields.Str(required=False, allow_none=True)
+    tasks = fields.Dict(
+        keys=fields.Integer(),
+        values=fields.Nested(HarvestCacheTaskSchema))

@@ -68,8 +68,12 @@ class TogglHarvestApp(object):
 
     @cachedproperty
     def harvest_cache(self):
+        schema = schemas.HarvestCacheEntrySchema()
+        harvest_projects = []
         with YAML() as yaml:
-            return HarvestCache(yaml.load(self._harvest_cache_file))
+            for i, entry in enumerate(yaml.load_all(self._harvest_cache_file)):
+                harvest_projects.append(schema.load(entry))
+        return HarvestCache(harvest_projects)
 
     @cachedproperty
     def project_file(self):
@@ -85,7 +89,9 @@ class TogglHarvestApp(object):
         return schemas.TimeLogSchema()
 
     def cache_harvest_projects(self):
-        self.harvest_api.update_project_cache(self.config_dir)
+        harvest_projects = self.harvest_api.cache_projects_via_api()
+        yaml = YAML()
+        yaml.dump_all(harvest_projects, self._harvest_cache_file)
 
     def download_toggl_data(self, start, end):
         toggl_time_entries = self.toggl_api.retrieve_time_entries(
