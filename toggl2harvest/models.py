@@ -159,7 +159,9 @@ class TimeLog(objdict):
             return self.harvest.task_id
 
         default_task_name = project_mapping.harvest_task_default(harvest_proj)
-        task_name = self.harvest.task_name or default_task_name
+        mapped_name = project_mapping.task_mapping(harvest_proj, self.toggl.task)
+        user_set_name = self.harvest.task_name
+        task_name = user_set_name or mapped_name or default_task_name
         if task_name is None or task_name == '':
             raise MissingHarvestTask()
 
@@ -184,11 +186,16 @@ class ProjectMapping:
     def __init__(self, mapping):
         self.mapping = mapping
         self.default_tasks = {}
+        self.task_mappings = {}
         for code, project in mapping.items():
             try:
                 p_id = project['harvest']['project']
                 t_name = project['harvest']['default_task']
                 self.default_tasks[p_id] = t_name
+                try:
+                    self.task_mappings[p_id] = project['task_mapping']
+                except KeyError:
+                    pass
             except KeyError:
                 pass
 
@@ -203,6 +210,12 @@ class ProjectMapping:
     def harvest_task_default(self, harvest_proj):
         try:
             return self.default_tasks[harvest_proj]
+        except KeyError:
+            return None
+
+    def task_mapping(self, harvest_proj, toggl_task):
+        try:
+            return self.task_mappings[harvest_proj][toggl_task]
         except KeyError:
             return None
 

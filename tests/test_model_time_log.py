@@ -2,7 +2,7 @@
 import pytest
 
 from toggl2harvest.exceptions import InvalidHarvestProject, InvalidHarvestTask
-from toggl2harvest.models import HarvestCache, HarvestData, ProjectMapping, TimeLog
+from toggl2harvest.models import HarvestCache, HarvestData, ProjectMapping, TimeLog, TogglData
 
 
 class TestUpdateHarvestTasks:
@@ -23,8 +23,11 @@ class TestUpdateHarvestTasks:
                 'harvest': {
                     'project': 123,
                     'default_task': 'Development',
-                }
-            }
+                },
+                'task_mapping': {
+                    'Special Task': 'Task 6',
+                },
+            },
         })
 
     @pytest.fixture
@@ -194,3 +197,24 @@ class TestUpdateHarvestTasks:
         assert time_log.harvest.project_id == 123
         assert time_log.harvest.task_id == 15
         assert time_log.description == 'TEST-9999 — and other text'
+
+    def test_sets_with_task_mapping(self, project_mapping, harvest_cache):
+        time_log = TimeLog(
+            project_code=None,
+            description=None,
+            is_billable=True,
+            time_entries=[],
+            toggl=TogglData(
+                project='Workplace',
+                task='Special Task'
+            ),
+            harvest=HarvestData(
+                project_id=123,
+                task_id=None,
+            ),
+        )
+
+        time_log.update_harvest_tasks(project_mapping, harvest_cache)
+
+        assert time_log.harvest.project_id == 123
+        assert time_log.harvest.task_id == 16
