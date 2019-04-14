@@ -1,12 +1,14 @@
 # Standard Library
 from datetime import datetime as dt
 from inspect import cleandoc
+from pprint import pprint
 
 # Third Party Packages
 import pytest
 from requests.exceptions import HTTPError
 
 from toggl2harvest import toggl
+from toggl2harvest.models import TimeLog
 
 
 @pytest.fixture
@@ -142,3 +144,76 @@ class TestRetrieveTimeEntries:
             )
 
         assert session_mock.get.call_count == 1
+
+
+basic_data = {
+    'pid': 123,
+    'tid': 678,
+    'description': 'Task Description',
+    'start': '2019-01-01T12:00:00-07:00',
+    'end': '2019-01-01T12:30:00-07:00',
+    'client': 'Client Name',
+    'project': 'Project Name',
+    'task': 'Type of Work',
+    'is_billable': True,
+    'tags': [],
+}
+
+
+class TestCreateTimeEntries:
+    def test_collapses_time_entries(self, toggl_session):
+        report_data = [
+            {**basic_data}, {
+                **basic_data,
+                'start': '2019-01-01T12:30:00-07:00',
+                'end': '2019-01-01T13:00:00-07:00',
+            }
+        ]
+
+        time_entries = toggl_session.create_time_entries(report_data)
+
+        assert len(time_entries.keys()) == 1  # Only one day
+        day_entries = list(time_entries.values())[0]
+        pprint(day_entries)
+        assert len(day_entries) == 1  # Only one TimeLog
+        entry = day_entries[0]
+        assert isinstance(entry, TimeLog)
+        assert len(entry.time_entries) == 2
+
+    @pytest.mark.parametrize('report_data', [
+        [
+            {**basic_data}, {
+                **basic_data,
+                'task': 'Different Type of Work',
+            }
+        ],
+        [
+            {**basic_data}, {
+                **basic_data,
+                'client': 'Different Client',
+            }
+        ],
+        [
+            {**basic_data}, {
+                **basic_data,
+                'project': 'Different Project',
+            }
+        ],
+        [
+            {**basic_data}, {
+                **basic_data,
+                'is_billable': False,
+            }
+        ],
+    ])
+    def test_does_not_collapses_time_entris(self, toggl_session, report_data):
+        time_entries = toggl_session.create_time_entries(report_data)
+
+        assert len(time_entries.keys()) == 1  # Only one day
+        day_entries = list(time_entries.values())[0]
+        pprint(day_entries)
+        assert len(day_entries) == 2  # Only one TimeLog
+
+        for entry in day_entries:
+            assert isinstance(entry, TimeLog)
+            assert len(entry.time_entries) == 1

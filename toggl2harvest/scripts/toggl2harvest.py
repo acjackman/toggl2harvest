@@ -53,7 +53,14 @@ def harvest_cache(app):
 @click.pass_obj
 def download_toggl_data(app, start, end):
     start_date, end_date = parse_start_end(start, end)
-    app.download_toggl_data(start_date, end_date)
+    _download_toggl_data(app, start_date, end_date)
+
+
+def _download_toggl_data(app, start_date, end_date):
+    time_entries = app.download_toggl_data(start_date, end_date)
+    for result in app.write_time_entries(time_entries):
+        if not result.written:
+            click.echo(f'{result.day} already exists, skipped.')
 
 
 @cli.command()
@@ -111,7 +118,7 @@ def timesheet(app, start, end):
     start_date, end_date = parse_start_end(start, end)
     selected_days = generate_selected_days(start_date, end_date)
 
-    app.download_toggl_data(start_date, end_date)
+    _download_toggl_data(app, start_date, end_date)
     _validate_time_logs(app, selected_days)
 
     if click.confirm(f'Upload data for {start} though {end} to Harvest?'):

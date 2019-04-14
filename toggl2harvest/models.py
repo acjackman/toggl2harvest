@@ -4,7 +4,6 @@ import re
 from datetime import timedelta
 
 from .exceptions import (
-    DifferentEntryError,
     InvalidHarvestProject,
     InvalidHarvestTask,
     MissingHarvestProject,
@@ -14,6 +13,24 @@ from .utils import delta_hours
 
 
 log = logging.getLogger(__name__)
+
+
+# From https://goodcode.io/articles/python-dict-object/
+class objdict(dict):
+    def __getattr__(self, name):
+        if name in self:
+            return self[name]
+        else:
+            raise AttributeError(f'No such attribute: {name}')
+
+    def __setattr__(self, name, value):
+        self[name] = value
+
+    def __delattr__(self, name):
+        if name in self:
+            del self[name]
+        else:
+            raise AttributeError(f'No such attribute: {name}')
 
 
 class TimeEntry:
@@ -78,7 +95,7 @@ class HarvestData:
         self.uploaded = uploaded
 
 
-class TimeLog:
+class TimeLog(objdict):
     def __init__(
         self, project_code, description, is_billable, time_entries,
         toggl=None, harvest=None
@@ -116,9 +133,6 @@ class TimeLog:
         )
 
     def add_to_time_entries(self, report_entry):
-        if report_entry.unique_key() != self.toggl.unique_key():
-            raise DifferentEntryError()
-
         entry = TimeEntry.build_from_toggl_entry(report_entry)
         self.time_entries.append(entry)
         return entry

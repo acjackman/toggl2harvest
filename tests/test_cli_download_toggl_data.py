@@ -23,6 +23,7 @@ def test_cli_links_to_app(cli_runner, app_mock, mocker):
 
     today = datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)
     assert mocker.call().download_toggl_data(today, today) in app_mock.mock_calls
+    assert mocker.call().write_time_entries(mocker.ANY) in app_mock.mock_calls
 
 
 def test_cli_links_to_app_takes_start_end(cli_runner, app_mock, mocker):

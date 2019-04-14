@@ -20,7 +20,3 @@ class InvalidHarvestProject(IncompleteHarvestData):
 
 class InvalidFileError(Exception):
     pass
-
-
-class DifferentEntryError(Exception):
-    pass

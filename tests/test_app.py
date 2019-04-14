@@ -14,7 +14,7 @@ from toggl2harvest.exceptions import (
     MissingHarvestProject,
     MissingHarvestTask,
 )
-from toggl2harvest.models import HarvestCache, ProjectMapping
+from toggl2harvest.models import HarvestCache, ProjectMapping, TimeLog
 
 
 @pytest.fixture
@@ -197,10 +197,73 @@ class TestDownloadTogglData:
             dt(2019, 1, 1),
             params={'fake': 'params'},
         )
-        mock_api.write_report_data.assert_called_with(
-            [{'entry': 1}, {'entry': 2}],
-            mock_data_dir,
-        )
+
+
+potential_time_entries = [
+    {
+        dt(2019, 1, 1): [
+            TimeLog(None, 'Task 1', False, []),
+            TimeLog(None, 'Task 2', False, []),
+        ],
+    },
+    {
+        dt(2019, 1, 1): [
+            TimeLog(None, 'Task 1', False, []),
+            TimeLog(None, 'Task 2', False, []),
+        ],
+        dt(2019, 1, 2): [
+            TimeLog(None, 'Task 3', False, []),
+            TimeLog(None, 'Task 4', False, []),
+        ],
+    },
+]
+
+
+class TestWriteTimeEntries:
+    @pytest.fixture
+    def app(credentials_file, tmpdir):
+        app = TogglHarvestApp()
+        app.config_dir = tmpdir
+        os.mkdir(Path(tmpdir, 'data'))
+        return app
+
+    @pytest.mark.parametrize('time_entries', potential_time_entries)
+    def test_writes_files(self, app, tmpdir, time_entries):
+        results = []
+        for result, day in zip(app.write_time_entries(time_entries), time_entries.keys()):
+            assert result.day == day
+            assert result.written is True
+            results.append(result)
+
+        assert len(results) == len(time_entries.keys())
+
+        for day in time_entries.keys():
+            data_file = Path(tmpdir / 'data' / f'{day:%Y-%m-%d}.yml')
+            assert data_file.is_file()
+
+    @pytest.mark.parametrize('time_entries', potential_time_entries)
+    def test_does_not_overwrite_file(self, app, tmpdir, time_entries):
+        jan_1 = Path(tmpdir / 'data' / '2019-01-01.yml')
+        with open(jan_1, 'w') as f:
+            f.write('Valuable Garbage')
+
+        results = []
+        for result, day in zip(app.write_time_entries(time_entries), time_entries.keys()):
+            assert result.day == day
+            file_written = day != dt(2019, 1, 1)
+            assert result.written == file_written
+            results.append(result)
+
+        assert len(results) == len(time_entries.keys())
+
+        for day in time_entries.keys():
+            data_file = Path(tmpdir / 'data' / f'{day:%Y-%m-%d}.yml')
+            assert data_file.is_file()
+
+        with open(jan_1, 'r') as f:
+            file_contents = f.read()
+
+        assert file_contents == 'Valuable Garbage'
 
 
 class TestValidateFile:

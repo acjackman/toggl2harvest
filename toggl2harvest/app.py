@@ -1,6 +1,7 @@
 # Standard Library
 import logging
 import os
+from collections import namedtuple
 from datetime import datetime
 from os.path import expanduser
 from pathlib import Path
@@ -25,6 +26,15 @@ from .utils import AtomicFileUpdate, iso_timestamp
 
 
 log = logging.getLogger(__name__)
+
+
+TimeEntryWriteResult = namedtuple(
+    'TimeEntryWriteResult',
+    ' '.join([
+        'day',
+        'written',
+    ])
+)
 
 
 class TogglHarvestApp(object):
@@ -99,7 +109,22 @@ class TogglHarvestApp(object):
             end,
             params=self.toggl_api.toggl_download_params(self.cred_file)
         )
-        self.toggl_api.write_report_data(toggl_time_entries, self.data_dir)
+        return self.toggl_api.create_time_entries(toggl_time_entries)
+
+    def write_time_entries(self, time_entries):
+        schema = schemas.TimeLogSchema()
+        for day, day_entries in time_entries.items():
+            day_file = Path(self.data_dir, f'{day:%Y-%m-%d}.yml')
+            # TODO: Check that date hasn't been opened before
+            if day_file.exists():
+                yield TimeEntryWriteResult(day=day, written=False)
+                continue  # Don't overwrite existing data
+
+            with YAML(output=day_file) as yaml:
+                for entry in day_entries:
+                    yaml.dump(schema.dump(entry))
+
+            yield TimeEntryWriteResult(day=day, written=True)
 
     def validate_file(self, day_file):
         file_errors = 0

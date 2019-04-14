@@ -2,6 +2,7 @@
 import logging
 import time
 from pathlib import Path
+from pprint import pformat
 
 # Third Party Packages
 import click
@@ -9,7 +10,6 @@ import requests
 from requests.exceptions import HTTPError
 from ruamel.yaml import YAML
 
-from .exceptions import DifferentEntryError
 from .models import TimeLog
 from .schemas import TimeLogSchema, TogglReportEntrySchema
 from .utils import iso_date
@@ -110,7 +110,7 @@ class TogglSession():
 
         return params
 
-    def write_report_data(self, report_data, data_dir=None):
+    def create_time_entries(self, report_data):
         schema = TogglReportEntrySchema(many=True)
         report_entries = schema.load(report_data)
         report_entries.sort(key=lambda x: x.start)
@@ -123,6 +123,7 @@ class TogglSession():
                     days_entries = daily_time_entries[start_date]['entries']
                     days_unqiue_map = daily_time_entries[start_date]['unique_map']
                 except KeyError:
+                    log.debug('create new day')
                     daily_time_entries[start_date] = {
                         'entries': [],
                         'unique_map': {},
@@ -133,22 +134,14 @@ class TogglSession():
             toggl_key = toggl_entry.unique_key()
 
             try:
-                log = days_unqiue_map[toggl_key]
-                log.add_to_time_entries(toggl_entry)
-            except (KeyError, DifferentEntryError):
-                log = TimeLog.build_from_toggl_entry(toggl_entry)
-                days_unqiue_map[toggl_key] = log
-                days_entries.append(log)
+                log.debug(f'days_unqiue_map\n{pformat(days_unqiue_map)}')
+                time_log = days_unqiue_map[toggl_key]
+                time_log.add_to_time_entries(toggl_entry)
+            except KeyError as e:
+                log.debug(type(e))
+                log.debug('Creating a new entry')
+                time_log = TimeLog.build_from_toggl_entry(toggl_entry)
+                days_unqiue_map[toggl_key] = time_log
+                days_entries.append(time_log)
 
-        # Write out raw yaml for the dates
-        schema = TimeLogSchema()
-        for day, day_entries in daily_time_entries.items():
-            day_file = Path(data_dir, f'{day:%Y-%m-%d}.yml')
-            # TODO: Check that date hasn't been opened before
-            if day_file.exists():
-                click.echo(f'{day} exists, skipping')
-                continue  # Don't overwrite existing data
-
-            with YAML(output=day_file) as yaml:
-                for entry in day_entries['entries']:
-                    yaml.dump(schema.dump(entry))
+        return {k: v['entries'] for k, v in daily_time_entries.items()}
