@@ -1,6 +1,5 @@
-# import the really small API
 # Configuration options found at https://github.com/jeffh/sniffer/
-# Standard Library
+
 # Standard Library
 import os
 

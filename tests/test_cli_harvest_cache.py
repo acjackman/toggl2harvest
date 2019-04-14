@@ -1,67 +1,23 @@
 # Third Party Packages
 import pytest
 
-from toggl2harvest.harvest import HarvestCredentials
 from toggl2harvest.scripts.toggl2harvest import cli
 
 
-@pytest.fixture()
-def fake_harvest_cred():
-    return HarvestCredentials('acount_id', 'token', 'user-agent')
-
-
-@pytest.fixture()
-def harvest_cred_mock(mocker, fake_harvest_cred):
+@pytest.fixture
+def app_mock(mocker):
     return mocker.patch(
-        'toggl2harvest.scripts.toggl2harvest.get_harvest_cred',
-        return_value=fake_harvest_cred
+        'toggl2harvest.scripts.toggl2harvest.TogglHarvestApp'
     )
 
 
-@pytest.fixture()
-def harvest_session_mock(mocker, fake_harvest_cred):
-    return mocker.patch(
-        'toggl2harvest.harvest.HarvestSession.update_project_cache',
-    )
+def test_cli_links_to_app(cli_runner, app_mock, mocker):
+    app_mock.cache_harvest_projects = mocker.MagicMock()
 
-
-@pytest.mark.runner_setup(env={'TOGGL2HARVEST_CONFIG': '.'})
-def test_harvest_cred_fails_gracefully_with_no_credentials_file(
-        mocker, isolated_cli_runner, harvest_session_mock):
-
-    result = isolated_cli_runner.invoke(
-        cli,
-        ['harvest-cache'])
-
-    print(result.output)
-    assert result.exit_code == 1, result.output
-
-    assert harvest_session_mock.call_count == 0
-
-
-def test_harvest_cred_fails_gracefully_with_malformed_credentials_file(
-        mocker, isolated_cli_runner, harvest_session_mock):
-    with open('credentials.yaml', 'w') as f:
-        f.write('abcdef')
-
-    result = isolated_cli_runner.invoke(
-        cli,
-        ['harvest-cache'])
-
-    assert result.exit_code == 1, result.output
-
-    assert harvest_session_mock.call_count == 0
-
-
-def test_harvest_cred_updates_project_cache(
-        mocker, isolated_cli_runner, harvest_cred_mock, harvest_session_mock):
-    result = isolated_cli_runner.invoke(
+    result = cli_runner.invoke(
         cli,
         ['harvest-cache'])
 
     assert result.exit_code == 0, result.output
 
-    assert harvest_cred_mock.call_count == 1
-
-    assert harvest_session_mock.call_count == 1
-    harvest_session_mock.assert_called_with('.')
+    assert mocker.call().cache_harvest_projects() in app_mock.mock_calls

@@ -12,8 +12,12 @@ from ruamel.yaml import YAML
 log = logging.getLogger(__name__)
 
 
-def cred_file_path(config_dir):
-    return Path(os.path.join(config_dir, 'credentials.yaml'))
+def iso_date(time_value):
+    return time_value.strftime('%Y-%m-%d')
+
+
+def iso_timestamp(time_value):
+    return time_value.strftime('%Y-%m-%dT%H:%M:%S%z')
 
 
 def strp_iso8601(datetime_str):
@@ -46,11 +50,8 @@ def calc_total_time(time_entries):
         end = strp_iso8601(entry['e'])
         # TODO if start > end
         total_time += end - start
+
     return total_time
-
-
-def data_file_path(config, date_str):
-    return Path(os.path.join(config.config_dir, 'data', f'{date_str}.yml'))
 
 
 def parse_start_end(start, end):
@@ -63,17 +64,47 @@ def generate_selected_days(start, end):
     selected_days = [start]
     while selected_days[-1].date() < end.date():
         selected_days.append(selected_days[-1] + timedelta(hours=24))
-    selected_days = [d.strftime('%Y-%m-%d') for d in selected_days]
+    selected_days = [f'{d:%Y-%m-%d}' for d in selected_days]
     return selected_days
 
 
-def operate_on_day_data(day_file, operate):
-    tmp_file = day_file.with_suffix('.yml.tmp')
+def operate_on_day_data(input, output, operate, **kwargs):
+    ctx = {}
+    with YAML(output=output) as yaml:
+        for i, data in enumerate(yaml.load_all(input)):
+            updated_data, ctx = operate(i, data, **kwargs)
+            yaml.dump(updated_data)
+    return ctx
 
-    with YAML(output=tmp_file) as yaml:
-        for i, data in enumerate(yaml.load_all(day_file)):
-            data = operate(i, data)
-            yaml.dump(data)
 
-    day_file.unlink()
-    tmp_file.rename(day_file)
+class AtomicFileUpdate():
+
+    def __init__(self, filename):
+        self.filename = filename
+        self._commit = False
+
+    def __enter__(self):
+        self.input = open(self.filename, 'r')
+        if isinstance(self.filename, Path):
+            self.tmp_filename = Path(
+                self.filename.parent,
+                self.filename.name + '.tmp')
+        else:
+            self.tmp_filename = self.filename + '.tmp'
+        self.output = open(self.tmp_filename, 'w')
+        return self
+
+    def __exit__(self, *args):
+        self.input.close()
+
+        self.output.flush()
+        os.fsync(self.output.fileno())
+        self.output.close()
+
+        if self._commit:
+            os.rename(self.tmp_filename, self.filename)
+        else:
+            os.remove(self.tmp_filename)
+
+    def commit(self):
+        self._commit = True

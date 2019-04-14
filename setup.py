@@ -9,7 +9,9 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     install_requires=[
+        'boltons',
         'Click',
+        'marshmallow >= 3.0.0rc5',
         'python-dateutil',
         'requests',
         'ruamel.yaml',
